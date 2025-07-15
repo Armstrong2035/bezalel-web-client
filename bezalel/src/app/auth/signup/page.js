@@ -6,6 +6,7 @@ export default function SignIn() {
       heading={"Sign up"}
       cta={"Sign up"}
       sidebarInfo={"Welcome to Bezalel."}
+      href={"/onboarding"}
     />
   );
 }

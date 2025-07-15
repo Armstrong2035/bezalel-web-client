@@ -20,8 +20,10 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Link from "next/link";
 import Image from "next/image";
 import Mark from "../../../public/images/logos/Mark.png";
+import { useRouter } from "next/navigation";
 
-export default function AuthPage({ heading, cta, subtext, sidebarInfo }) {
+export default function AuthPage({ heading, cta, subtext, sidebarInfo, href }) {
+  const router = useRouter();
   const socialButtons = [
     { icon: <GoogleIcon /> },
     { icon: <FacebookIcon /> },
@@ -152,6 +154,7 @@ export default function AuthPage({ heading, cta, subtext, sidebarInfo }) {
               borderRadius: "73.2px",
               border: "1px solid rgba(255, 255, 255, 0.7)",
             }}
+            onClick={() => router.push(href)}
           >
             {cta}
           </Button>
