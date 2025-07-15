@@ -1,21 +1,25 @@
 import { Card, CardContent, Typography } from "@mui/material";
+import VoteControl from "./Vote";
 
-export default function IdeaCard({ card, index }) {
+export default function IdeaCard({ card, index, control }) {
   return (
     <Card
       sx={{
-        position: "absolute",
-        top: index * 10, // offset each card by 10px
-        left: index * 5, // optional: horizontal offset
-        zIndex: index,
-        width: "30%",
-        transition: "transform 0.2s",
-        height: "60vh",
-        // Add hover/focus effects if you want
+        height: "70%",
+        display: "flex",
+        flexDirection: "column",
+        borderRadius: 10,
+        backgroundColor: "rgba(40, 40, 40, 0.9)",
       }}
     >
       <CardContent>
-        <Typography>{card.title}</Typography>
+        <Typography sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
+          <strong>{card.title}</strong>
+        </Typography>
+        <Typography sx={{ mt: 1, color: "rgba(255, 255, 255, 0.7)" }}>
+          {card.description}
+        </Typography>
+        {control === "vote" && <VoteControl />}
       </CardContent>
     </Card>
   );

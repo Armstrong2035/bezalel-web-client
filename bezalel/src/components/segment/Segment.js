@@ -1,10 +1,14 @@
 import { Box, Typography, Grid } from "@mui/material";
 import IdeaCard from "./segmentIdeas/IdeaCard";
 import { useState } from "react";
+import GeneratedIdeas from "./segmentIdeas/GeneratedIdeas";
+import AcceptedIdeas from "./segmentIdeas/AcceptedIdeas";
 
 export default function Segment({ segment }) {
   const [acceptedCards, setAcceptedCards] = useState([]);
   const [rejectedCards, setRejectedCards] = useState([]);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0); // Start from index 0 for the first card
+
   const cards = [
     {
       title: "Card Title 1",
@@ -24,31 +28,37 @@ export default function Segment({ segment }) {
   ];
 
   return (
-    <Box>
-      <Typography variant="h4" sx={{ color: "white" }}>
-        {segment}
-      </Typography>
+    <Box sx={{ mt: 5, height: "90vh" }}>
+      <Grid container sx={{ px: 2, py: 2, height: "100%" }}>
+        <Grid
+          size={{ xs: 12, md: 4 }}
+          sx={{
+            height: "100%",
+            px: { xs: null, md: 13 },
+          }}
+        >
+          <GeneratedIdeas cards={cards} />
+        </Grid>
 
-      <Grid
-        container
-        sx={{
-          position: "relative",
-          border: "1px solid white",
-        }}
-      >
-        {cards.map((card, index) => (
-          // ideas card with accept and reject buttons.
-          <Grid item size={{}} sx={{}}>
-            <IdeaCard key={index} card={card} index={index} />
-          </Grid>
-        ))}
+        <Grid
+          size={{ xs: 12, md: 8 }}
+          sx={{
+            height: "100%",
+            px: { xs: null, md: 13 },
+          }}
+        >
+          <AcceptedIdeas cards={cards} />
+        </Grid>
 
-        {cards.map((card, index) => (
-          // ideas card with accept and reject bu
-          <Grid item size={{}} sx={{}}>
-            <IdeaCard key={index} card={card} index={index} />
-          </Grid>
-        ))}
+        <Grid
+          size={{ xs: 12, md: 8 }}
+          sx={{
+            height: "100%",
+            px: { xs: null, md: 13 },
+          }}
+        >
+          <SegmentSignals cards={cards} />
+        </Grid>
       </Grid>
     </Box>
   );
