@@ -3,6 +3,7 @@ import IdeaCard from "./segmentIdeas/IdeaCard";
 import { useState } from "react";
 import GeneratedIdeas from "./segmentIdeas/GeneratedIdeas";
 import AcceptedIdeas from "./segmentIdeas/AcceptedIdeas";
+import SegmentSignals from "./segmentIdeas/SegmentSignals";
 
 export default function Segment({ segment }) {
   const [acceptedCards, setAcceptedCards] = useState([]);
@@ -28,33 +29,43 @@ export default function Segment({ segment }) {
   ];
 
   return (
-    <Box sx={{ mt: 5, height: "90vh" }}>
+    <Box sx={{ mt: 1, height: "90vh" }}>
+      <Typography variant="h2" align="center" sx={{ color: "white" }}>
+        {segment}
+      </Typography>
       <Grid container sx={{ px: 2, py: 2, height: "100%" }}>
         <Grid
           size={{ xs: 12, md: 4 }}
           sx={{
             height: "100%",
             px: { xs: null, md: 13 },
+            border: "1px solid green",
           }}
         >
-          <GeneratedIdeas cards={cards} />
+          <GeneratedIdeas
+            cards={cards}
+            currentCardIndex={currentCardIndex}
+            segment={segment}
+          />
         </Grid>
 
         <Grid
-          size={{ xs: 12, md: 8 }}
+          size={{ xs: 12, md: 4 }}
           sx={{
             height: "100%",
             px: { xs: null, md: 13 },
+            border: "1px solid red",
           }}
         >
           <AcceptedIdeas cards={cards} />
         </Grid>
 
         <Grid
-          size={{ xs: 12, md: 8 }}
+          size={{ xs: 12, md: 4 }}
           sx={{
             height: "100%",
             px: { xs: null, md: 13 },
+            border: "1px solid blue",
           }}
         >
           <SegmentSignals cards={cards} />
