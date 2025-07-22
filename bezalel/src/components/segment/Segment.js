@@ -1,8 +1,8 @@
-import { Box, Typography, Grid } from "@mui/material";
+import { Box, Typography, Grid, Container } from "@mui/material";
 import IdeaCard from "./segmentIdeas/IdeaCard";
 import { useState } from "react";
 import GeneratedIdeas from "./segmentIdeas/GeneratedIdeas";
-import AcceptedIdeas from "./segmentIdeas/AcceptedIdeas";
+import AcceptedIdeasList from "./segmentIdeas/AcceptedIdeas";
 import SegmentSignals from "./segmentIdeas/SegmentSignals";
 
 export default function Segment({ segment }) {
@@ -29,17 +29,24 @@ export default function Segment({ segment }) {
   ];
 
   return (
-    <Box sx={{ mt: 1, height: "90vh" }}>
+    <Container sx={{ mt: 1, height: "90vh" }}>
       <Typography variant="h2" align="center" sx={{ color: "white" }}>
         {segment}
       </Typography>
-      <Grid container sx={{ px: 2, py: 2, height: "100%" }}>
+      <Grid
+        container
+        spacing={3}
+        sx={{
+          height: "100%",
+          mt: 5,
+          // border: "1px solid red"
+        }}
+      >
         <Grid
           size={{ xs: 12, md: 4 }}
           sx={{
             height: "100%",
-            px: { xs: null, md: 13 },
-            border: "1px solid green",
+            //  border: "1px solid red",
           }}
         >
           <GeneratedIdeas
@@ -53,24 +60,22 @@ export default function Segment({ segment }) {
           size={{ xs: 12, md: 4 }}
           sx={{
             height: "100%",
-            px: { xs: null, md: 13 },
-            border: "1px solid red",
+            //  border: "1px solid red",
           }}
         >
-          <AcceptedIdeas cards={cards} />
+          <AcceptedIdeasList cards={cards} />
         </Grid>
 
         <Grid
           size={{ xs: 12, md: 4 }}
           sx={{
             height: "100%",
-            px: { xs: null, md: 13 },
-            border: "1px solid blue",
+            //  border: "1px solid red",
           }}
         >
           <SegmentSignals cards={cards} />
         </Grid>
       </Grid>
-    </Box>
+    </Container>
   );
 }

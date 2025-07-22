@@ -12,14 +12,26 @@ export default function VoteControl() {
     >
       <IconButton
         fontSize="large"
-        sx={{ color: "#ffd766", backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+        sx={{
+          color: "#6B7280", // default
+          "&:hover": {
+            color: "#60A5FA", // on hover
+            transform: "scale(1.1)",
+          },
+        }}
       >
         <ThumbUpIcon fontSize="large" />
       </IconButton>
 
       <IconButton
         fontSize="large"
-        sx={{ color: "#ffd766", backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+        sx={{
+          color: "#6B7280", // default
+          "&:hover": {
+            color: "#60A5FA", // on hover
+            transform: "scale(1.1)",
+          },
+        }}
       >
         <ThumbDown fontSize="large" />
       </IconButton>
