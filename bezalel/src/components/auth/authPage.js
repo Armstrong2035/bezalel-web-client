@@ -24,11 +24,7 @@ import { useRouter } from "next/navigation";
 
 export default function AuthPage({ heading, cta, subtext, sidebarInfo, href }) {
   const router = useRouter();
-  const socialButtons = [
-    { icon: <GoogleIcon /> },
-    { icon: <FacebookIcon /> },
-    { icon: <AppleIcon /> },
-  ];
+
   return (
     <Box>
       <Link
@@ -76,19 +72,17 @@ export default function AuthPage({ heading, cta, subtext, sidebarInfo, href }) {
             <Typography sx={{ ...typographyStyles.heading }}>
               {heading}
             </Typography>
-            <Stack direction="row" spacing={1}>
-              {socialButtons.map((button, index) => (
-                <IconButton
-                  sx={{ borderRadius: "50%", color: "black" }}
-                  key={index}
-                >
-                  {button.icon}
-                </IconButton>
-              ))}
+            <Stack direction="column" alignItems="center">
+              <Typography>Continue with Google:</Typography>
+              <IconButton
+                size="large"
+                sx={{ borderRadius: "50%", color: "black" }}
+              >
+                <GoogleIcon />
+              </IconButton>
             </Stack>
-            <Typography>Or continue with email and password</Typography>
+            <Typography>Or continue with email</Typography>
           </Box>
-
           <TextField
             label="Email"
             sx={{
@@ -114,7 +108,7 @@ export default function AuthPage({ heading, cta, subtext, sidebarInfo, href }) {
               },
             }}
           />
-          <TextField
+          {/* <TextField
             label="Password"
             sx={{
               width: "50%",
@@ -138,8 +132,7 @@ export default function AuthPage({ heading, cta, subtext, sidebarInfo, href }) {
                 color: "#333333",
               },
             }}
-          />
-
+          /> */}
           <Button
             variant="contained"
             sx={{
