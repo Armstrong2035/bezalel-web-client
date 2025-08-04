@@ -1,3 +1,4 @@
+import { AuthInitializer } from "@/firebase";
 import { Poppins } from "next/font/google";
 
 const poppins = Poppins({
@@ -13,7 +14,7 @@ export default function RootLayout({ children }) {
         className={poppins.className}
         style={{ backgroundColor: "#000000", padding: 0, margin: 0 }}
       >
-        {children}
+        <AuthInitializer>{children}</AuthInitializer>
       </body>
     </html>
   );

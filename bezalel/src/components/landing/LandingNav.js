@@ -35,7 +35,7 @@ export default function LandingNav() {
       },
       {
         title: "Sign up",
-        href: "/auth/signup",
+        href: "/onboarding",
       },
       {
         title: "Sign in",

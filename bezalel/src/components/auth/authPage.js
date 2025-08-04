@@ -1,38 +1,26 @@
+// components/auth/authPage.js
 "use client";
 
-import GoogleIcon from "@mui/icons-material/Google";
-import FacebookIcon from "@mui/icons-material/Facebook";
-import AppleIcon from "@mui/icons-material/Apple";
-import {
-  Grid,
-  Box,
-  Typography,
-  Stack,
-  IconButton,
-  TextField,
-  Button,
-  Container,
-  Paper,
-} from "@mui/material";
+import { Grid, Box, Typography, IconButton } from "@mui/material";
 import { typographyStyles } from "../../typographyStyles/typography";
-import LandingNav from "@/components/landing/LandingNav";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Link from "next/link";
-import Image from "next/image";
+import GoogleAuthProvider from "./GoogleAuthProvider";
+import EmailAuthProvider from "./EmailAuthProvider";
+import AuthImage from "./AuthImage";
 import Mark from "../../../public/images/logos/Mark.png";
-import { useRouter } from "next/navigation";
+import { useAuthRedirect } from "./useAuthRedirect";
 
-export default function AuthPage({ heading, cta, subtext, sidebarInfo, href }) {
-  const router = useRouter();
+export default function AuthPage({ heading, cta, sidebarInfo, onSuccess }) {
+  const { loading } = useAuthRedirect();
+
+  if (loading) {
+    return <Box>Loading...</Box>;
+  }
 
   return (
     <Box>
-      <Link
-        href="/"
-        style={{
-          textDecoration: "none",
-        }}
-      >
+      <Link href="/" style={{ textDecoration: "none" }}>
         <IconButton
           sx={{
             position: "absolute",
@@ -60,99 +48,12 @@ export default function AuthPage({ heading, cta, subtext, sidebarInfo, href }) {
             gap: 2,
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 1,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Typography sx={{ ...typographyStyles.heading }}>
-              {heading}
-            </Typography>
-            <Stack direction="column" alignItems="center">
-              <Typography>Continue with Google:</Typography>
-              <IconButton
-                size="large"
-                sx={{ borderRadius: "50%", color: "black" }}
-              >
-                <GoogleIcon />
-              </IconButton>
-            </Stack>
-            <Typography>Or continue with email</Typography>
-          </Box>
-          <TextField
-            label="Email"
-            sx={{
-              width: "50%",
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "70.59px",
-                backgroundColor: "#cccccc",
-                "& fieldset": {
-                  border: "none",
-                },
-                "&:hover fieldset": {
-                  border: "none",
-                },
-                "&.Mui-focused fieldset": {
-                  border: "none",
-                },
-              },
-              "& .MuiInputLabel-root": {
-                color: "#666666",
-              },
-              "& .MuiInputBase-input": {
-                color: "#333333",
-              },
-            }}
-          />
-          {/* <TextField
-            label="Password"
-            sx={{
-              width: "50%",
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "70.59px",
-                backgroundColor: "#cccccc",
-                "& fieldset": {
-                  border: "none",
-                },
-                "&:hover fieldset": {
-                  border: "none",
-                },
-                "&.Mui-focused fieldset": {
-                  border: "none",
-                },
-              },
-              "& .MuiInputLabel-root": {
-                color: "#666666",
-              },
-              "& .MuiInputBase-input": {
-                color: "#333333",
-              },
-            }}
-          /> */}
-          <Button
-            variant="contained"
-            sx={{
-              color: "whitesmoke",
-              textAlign: "center",
-              mt: 2,
-              width: "50%",
-              fontSize: { xs: "11px", sm: "16px" },
-              lineHeight: "20px",
-              p: 2,
-              backgroundColor: "#4c4c4c",
-              borderRadius: "73.2px",
-              border: "1px solid rgba(255, 255, 255, 0.7)",
-            }}
-            onClick={() => router.push(href)}
-          >
-            {cta}
-          </Button>
+          <Typography sx={{ ...typographyStyles.heading }}>
+            {heading}
+          </Typography>
+          <GoogleAuthProvider cta={cta} onSuccess={onSuccess} />
+          <EmailAuthProvider cta={cta} onSuccess={onSuccess} />
         </Grid>
-
         <Grid
           item
           size={{ xs: 12, md: 4 }}
@@ -162,21 +63,7 @@ export default function AuthPage({ heading, cta, subtext, sidebarInfo, href }) {
             alignItems: "center",
           }}
         >
-          <Stack>
-            <Image
-              src={Mark}
-              alt="Bezalel Logo"
-              width={300}
-              height={300}
-              style={{
-                width: "100%",
-                height: "auto",
-                maxWidth: "300px",
-                display: "block",
-                margin: "0 auto",
-              }}
-            />
-          </Stack>
+          <AuthImage src={Mark} />
         </Grid>
       </Grid>
     </Box>

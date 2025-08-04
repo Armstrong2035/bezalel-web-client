@@ -16,5 +16,5 @@ export {
 } from "./auth";
 
 // Zustand Store and Components
-export { useAuthStore } from "./authStore";
+export { useAuthStore } from "../stores/authStore";
 export { AuthInitializer } from "./AuthInitializer";
