@@ -29,139 +29,53 @@ import Heading from "@/components/onboarding/Heading";
 import ProgressBar from "@/components/onboarding/ProgressBar";
 import QuestionCard from "@/components/onboarding/QuestionCard";
 import NavigationButtons from "@/components/onboarding/NavigationButtons";
+import onboardingQuestions from "../../components/onboarding/helpers/onboardingData";
+import { useOnboardingStore } from "@/stores/onboardingStore";
 
 export default function Onboarding() {
   const router = useRouter();
+
   const ideaExists = false; // <-- set to false to show the idea box
+  // If true, the first question will be skipped. Useful for the previous onboarding flow which bega from the landing page.
+  // If false, the first question will be shown, allowing users to enter their business idea
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
     ideaExists ? 1 : 0
   );
-  const [answers, setAnswers] = useState({});
-
-  const onboardingQuestions = [
-    {
-      id: "businessIdea",
-      emoji: "💡",
-      question: "What's your business idea?",
-      explanation:
-        "Describe your business idea in a few sentences. This helps us create a personalized business model canvas.",
-      type: "text-input",
-      placeholder:
-        "e.g., A SaaS platform that helps small restaurants manage their inventory and reduce food waste...",
-    },
-    {
-      id: "journey",
-      emoji: "🚶‍♂️",
-      question: "Where are you in the journey?",
-      explanation:
-        "We ask this to tailor our recommendations to your current stage. Beginners and live business owners need very different support.",
-      type: "multiple-choice",
-      options: [
-        "Just an idea",
-        "Doing research",
-        "Already started building",
-        "Have some traction",
-        "Running a live business",
-      ],
-    },
-    {
-      id: "goal",
-      emoji: "🎯",
-      question: "What's your main goal?",
-      explanation:
-        "Your goal shapes the entire strategy. Whether you're testing or scaling, we guide you accordingly.",
-      type: "multiple-choice",
-      options: [
-        "Start earning from this",
-        "Test if it's worth pursuing",
-        "Grow into a serious business",
-        "Solve a problem I care about",
-      ],
-    },
-    {
-      id: "time",
-      emoji: "🕒",
-      question: "How much time can you give this?",
-      explanation:
-        "Time is your most limited resource. We won't suggest plans that require more time than you have.",
-      type: "multiple-choice",
-      options: [
-        "Just a few hours a week",
-        "8–15 hours a week",
-        "15–30 hours a week",
-        "Full-time or close to it",
-      ],
-    },
-    {
-      id: "experience",
-      emoji: "📚",
-      question: "What's your experience level?",
-      explanation:
-        "This helps Bezalel know how much guidance to give. Total beginners get more hand-holding, while experts get more advanced paths.",
-      type: "multiple-choice",
-      options: [
-        "Total beginner",
-        "Some business experience",
-        "Industry/domain expert",
-        "Started a business before",
-      ],
-    },
-    {
-      id: "investment",
-      emoji: "💰",
-      question: "How much can you invest financially (for now)?",
-      explanation:
-        "Your financial range affects what strategies are realistic. We don't want to suggest something you can't afford.",
-      type: "multiple-choice",
-      options: [
-        "$0 (I'm broke but scrappy)",
-        "<$100",
-        "$100–$500",
-        "$500–$2,000",
-        "I'm ready to invest more if it makes sense",
-      ],
-    },
-    {
-      id: "archetype",
-      emoji: "🧬",
-      question: "What type of business is this?",
-      explanation:
-        "Different types of businesses require very different planning. We use this to apply proven strategy patterns from your category.",
-      type: "multiple-choice",
-      options: [
-        "SaaS",
-        "Marketplace",
-        "Service Business",
-        "EdTech / Online Learning",
-        "Consumer App",
-        "Local Business",
-        "Newsletter / Media",
-        "Not sure yet",
-      ],
-    },
-  ];
+  const onboardingData = useOnboardingStore((state) => state.onboardingData);
+  const setOnboardingData = useOnboardingStore(
+    (state) => state.setOnboardingData
+  );
+  //local state variable to store answers.
 
   const currentQuestion = onboardingQuestions[currentQuestionIndex];
+  //keep track of the current question based on the index. Questions from the onboardingQuestions array.
+
   const progress =
     ((currentQuestionIndex + 1) / onboardingQuestions.length) * 100;
+  // Calculate progress as a percentage based on the current question index.
   const isFirstQuestion = currentQuestionIndex === 0;
+  // Check if the current question is the first one.
+  // If true, the "Previous" button will be disabled.
   const isLastQuestion =
     currentQuestionIndex === onboardingQuestions.length - 1;
-  const hasAnswer = answers[currentQuestion.id];
+  // Check if the current question is the last one.
+  // If true, the "Next" button will be disabled.
+  const hasAnswer = onboardingData[currentQuestion.id];
+
+  // Check if the current question has an answer. User cannot proceed without answering the current question.
 
   const handleAnswerChange = (value) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQuestion.id]: value,
-    }));
+    setOnboardingData({ [currentQuestion.id]: value });
   };
 
   const handleNext = () => {
     if (isLastQuestion) {
       // Submit onboarding data
-      console.log("Onboarding completed:", answers);
+      console.log("Onboarding completed:", onboardingData);
+
       // Navigate to dashboard or next step
-      router.push("/dashboard");
+      router.push("/segments");
     } else {
       setCurrentQuestionIndex((prev) => prev + 1);
     }
@@ -174,110 +88,6 @@ export default function Onboarding() {
   const handleSkip = () => {
     router.push("/segments");
   };
-
-  function renderQuestion() {
-    if (currentQuestion.type === "text-input") {
-      return (
-        <TextField
-          fullWidth
-          multiline
-          rows={4}
-          value={answers[currentQuestion.id] || ""}
-          onChange={(e) =>
-            setAnswers((prev) => ({
-              ...prev,
-              [currentQuestion.id]: e.target.value,
-            }))
-          }
-          placeholder={currentQuestion.placeholder}
-          variant="outlined"
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              color: "white",
-              fontSize: { xs: "0.95rem", sm: "1.1rem" },
-              fontFamily: "Poppins, sans-serif",
-              "& fieldset": {
-                borderColor: "rgba(255, 255, 255, 0.2)",
-              },
-              "&:hover fieldset": {
-                borderColor: "rgba(255, 255, 255, 0.3)",
-              },
-              "&.Mui-focused fieldset": {
-                borderColor: "rgba(255, 255, 255, 0.5)",
-              },
-            },
-            "& .MuiInputBase-input::placeholder": {
-              color: "rgba(255, 255, 255, 0.5)",
-              opacity: 1,
-            },
-          }}
-        />
-      );
-    }
-
-    // Handle multiple-choice questions
-    if (currentQuestion.type === "multiple-choice") {
-      return (
-        <FormControl component="fieldset" sx={{ width: "100%" }}>
-          <RadioGroup
-            value={answers[currentQuestion.id] || ""}
-            onChange={(e) =>
-              setAnswers((prev) => ({
-                ...prev,
-                [currentQuestion.id]: e.target.value,
-              }))
-            }
-          >
-            {currentQuestion.options.map((option, index) => (
-              <FormControlLabel
-                key={index}
-                value={option}
-                control={
-                  <Radio
-                    sx={{
-                      color: "rgba(255, 255, 255, 0.5)",
-                      "&.Mui-checked": {
-                        color: "#ffffff",
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Typography
-                    sx={{
-                      color: "white",
-                      fontSize: { xs: "0.95rem", sm: "1.1rem" },
-                      fontWeight: 400,
-                    }}
-                  >
-                    {option}
-                  </Typography>
-                }
-                sx={{
-                  margin: "12px 0",
-                  padding: { xs: "10px 12px", sm: "12px 16px" },
-                  borderRadius: 2,
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  backgroundColor: "rgba(255, 255, 255, 0.02)",
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    borderColor: "rgba(255, 255, 255, 0.2)",
-                  },
-                  "&.Mui-checked": {
-                    backgroundColor: "rgba(255, 255, 255, 0.1)",
-                    borderColor: "rgba(255, 255, 255, 0.3)",
-                  },
-                }}
-              />
-            ))}
-          </RadioGroup>
-        </FormControl>
-      );
-    }
-
-    // Optionally, handle other types or return null
-    return null;
-  }
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -292,7 +102,7 @@ export default function Onboarding() {
       />
       <QuestionCard
         question={currentQuestion}
-        answer={answers[currentQuestion.id]}
+        answer={onboardingData[currentQuestion.id]}
         onAnswerChange={handleAnswerChange}
       />
       <NavigationButtons

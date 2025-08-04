@@ -1,11 +1,14 @@
 import HeroText from "./HeroText";
 import GetStarted from "../GetStarted/GetStarted";
-import { Box, Container } from "@mui/material";
+import { Box, Container, Button } from "@mui/material";
 import Image from "next/image";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { useRouter } from "next/navigation";
 
 export default function Hero() {
+  const router = useRouter();
   return (
-    <Box sx={{ position: "relative" }}>
+    <Box sx={{ maxWidth: "100%", position: "relative", overflow: "hidden" }}>
       {/* Background image positioned underneath hero text, extending from left */}
       <Box
         sx={{
@@ -65,10 +68,28 @@ export default function Hero() {
         />
       </Box>
 
-      <Container sx={{ mt: 5 }}>
+      <Container
+        sx={{
+          mt: 2,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         <HeroText />
 
-        <GetStarted />
+        <Button
+          variant="outlined"
+          endIcon={<ArrowForwardIcon />}
+          sx={{ color: "whitesmoke", borderColor: "whitesmoke", mt: 2 }}
+          size="large"
+          alignSelf="center"
+          onClick={() => router.push("/onboarding")}
+        >
+          Tell Bezalel your business Idea
+        </Button>
+
+        {/* <GetStarted /> */}
       </Container>
     </Box>
   );

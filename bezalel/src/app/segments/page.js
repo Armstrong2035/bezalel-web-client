@@ -1,5 +1,6 @@
 "use client";
 
+import { useOnboardingStore } from "@/stores/onboardingStore";
 import {
   Box,
   Typography,
@@ -14,8 +15,11 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export default function Dashboard() {
+export default function Segments() {
   const router = useRouter();
+
+  const onboardingData = useOnboardingStore((state) => state.onboardingData);
+  console.log("Onboarding Data:", onboardingData);
 
   const canvasSections = {
     section1: [

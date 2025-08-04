@@ -9,7 +9,7 @@ export default function HeroText() {
   };
 
   return (
-    <Stack spacing={4} alignItems="center" sx={{ py: 10 }}>
+    <Stack spacing={4} alignItems="center" sx={{ py: 5 }}>
       <Typography
         textAlign="center"
         sx={{
