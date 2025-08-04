@@ -31,49 +31,51 @@ import QuestionCard from "@/components/onboarding/QuestionCard";
 import NavigationButtons from "@/components/onboarding/NavigationButtons";
 import onboardingQuestions from "../../components/onboarding/helpers/onboardingData";
 import { useOnboardingStore } from "@/stores/onboardingStore";
-import { useAuthRedirect } from "@/components/auth/useAuthRedirect";
-import { completeOnboarding, getCurrentUser } from "@/firebase/auth";
 
 export default function Onboarding() {
   const router = useRouter();
-  const { loading } = useAuthRedirect();
 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const ideaExists = false; // <-- set to false to show the idea box
+  // If true, the first question will be skipped. Useful for the previous onboarding flow which bega from the landing page.
+  // If false, the first question will be shown, allowing users to enter their business idea
+
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
+    ideaExists ? 1 : 0
+  );
   const onboardingData = useOnboardingStore((state) => state.onboardingData);
   const setOnboardingData = useOnboardingStore(
     (state) => state.setOnboardingData
   );
-  const resetOnboardingData = useOnboardingStore(
-    (state) => state.resetOnboardingData
-  );
+  //local state variable to store answers.
 
   const currentQuestion = onboardingQuestions[currentQuestionIndex];
+  //keep track of the current question based on the index. Questions from the onboardingQuestions array.
+
   const progress =
     ((currentQuestionIndex + 1) / onboardingQuestions.length) * 100;
+  // Calculate progress as a percentage based on the current question index.
   const isFirstQuestion = currentQuestionIndex === 0;
+  // Check if the current question is the first one.
+  // If true, the "Previous" button will be disabled.
   const isLastQuestion =
     currentQuestionIndex === onboardingQuestions.length - 1;
+  // Check if the current question is the last one.
+  // If true, the "Next" button will be disabled.
   const hasAnswer = onboardingData[currentQuestion.id];
+
+  // Check if the current question has an answer. User cannot proceed without answering the current question.
 
   const handleAnswerChange = (value) => {
     setOnboardingData({ [currentQuestion.id]: value });
   };
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (isLastQuestion) {
-      const user = getCurrentUser();
-      if (user) {
-        // Authenticated: complete onboarding and redirect to segments
-        try {
-          await completeOnboarding(user.uid);
-          resetOnboardingData();
-        } catch (error) {
-          console.error("Failed to complete onboarding:", error);
-        }
-      } else {
-        // Unauthenticated: go to signup
-        router.push("/auth/signup");
-      }
+      // Submit onboarding data
+      console.log("Onboarding completed:", onboardingData);
+
+      // Navigate to dashboard or next step
+      router.push("/auth/signup");
     } else {
       setCurrentQuestionIndex((prev) => prev + 1);
     }
@@ -83,9 +85,9 @@ export default function Onboarding() {
     setCurrentQuestionIndex((prev) => prev - 1);
   };
 
-  if (loading) {
-    return <Box>Loading...</Box>;
-  }
+  const handleSkip = () => {
+    router.push("/auth/signup");
+  };
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>

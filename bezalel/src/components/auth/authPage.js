@@ -9,15 +9,8 @@ import GoogleAuthProvider from "./GoogleAuthProvider";
 import EmailAuthProvider from "./EmailAuthProvider";
 import AuthImage from "./AuthImage";
 import Mark from "../../../public/images/logos/Mark.png";
-import { useAuthRedirect } from "./useAuthRedirect";
 
-export default function AuthPage({ heading, cta, sidebarInfo, onSuccess }) {
-  const { loading } = useAuthRedirect();
-
-  if (loading) {
-    return <Box>Loading...</Box>;
-  }
-
+export default function AuthPage({ heading, cta, sidebarInfo }) {
   return (
     <Box>
       <Link href="/" style={{ textDecoration: "none" }}>
@@ -51,8 +44,8 @@ export default function AuthPage({ heading, cta, sidebarInfo, onSuccess }) {
           <Typography sx={{ ...typographyStyles.heading }}>
             {heading}
           </Typography>
-          <GoogleAuthProvider cta={cta} onSuccess={onSuccess} />
-          <EmailAuthProvider cta={cta} onSuccess={onSuccess} />
+          <GoogleAuthProvider cta={cta} />
+          <EmailAuthProvider cta={cta} />
         </Grid>
         <Grid
           item

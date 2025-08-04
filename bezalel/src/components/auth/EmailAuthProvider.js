@@ -2,26 +2,36 @@
 import { Box, TextField, Typography, Button } from "@mui/material";
 import { useState } from "react";
 import { signUpWithEmail, signInWithEmail } from "@/firebase/auth";
+import { useRouter } from "next/navigation";
+import { saveOnboardingContext } from "@/firebase/saveDecisionContext";
+import { useOnboardingStore } from "@/stores/onboardingStore";
 
-export default function EmailAuthProvider({ cta, onSuccess }) {
+export default function EmailAuthProvider({ cta }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+
+  const onboardingData = useOnboardingStore((state) => state.onboardingData);
+
+  const router = useRouter();
 
   const handleEmailAuth = async () => {
     try {
       let res;
       if (cta === "Sign up") {
         res = await signUpWithEmail(email, password);
+        if (res.error) {
+          throw res.error;
+        }
+        await saveOnboardingContext(res.user.uid, onboardingData); // Fixed!
+        await router.push("/segments");
       } else {
         res = await signInWithEmail(email, password);
+        if (res.error) {
+          throw res.error;
+        }
       }
-      if (res.error) {
-        throw res.error;
-      }
-      if (res.user && onSuccess) {
-        onSuccess(res.user);
-      }
+
       setError(null);
     } catch (error) {
       console.error(`${cta} with email failed:`, error);

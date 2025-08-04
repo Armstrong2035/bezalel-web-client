@@ -3,15 +3,16 @@ import { Box, Typography, Stack, IconButton } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
 import { signInWithGoogle } from "@/firebase/auth";
 
-export default function GoogleAuthProvider({ cta, onSuccess }) {
+export default function GoogleAuthProvider({ cta }) {
   const handleGoogleSignIn = async () => {
     try {
       const { user } = await signInWithGoogle();
-      if (user && onSuccess && cta === "Sign up") {
-        onSuccess(user);
+      if (user && cta === "Sign up") {
       }
+      return cta === "Sign up" ? user.uid : null;
     } catch (error) {
       console.error("Google auth failed:", error);
+      return null;
     }
   };
 

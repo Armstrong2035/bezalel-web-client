@@ -37,20 +37,6 @@ googleProvider.setCustomParameters({
  * @returns {Promise<void>}
  */
 
-export const completeOnboarding = async (userId) => {
-  try {
-    const userDocRef = doc(db, "users", userId);
-    await setDoc(
-      userDocRef,
-      { onboardingCompleted: true, updatedAt: serverTimestamp() },
-      { merge: true }
-    );
-  } catch (error) {
-    console.error("Error completing onboarding:", error);
-    throw error;
-  }
-};
-
 // Rest of auth.js unchanged
 export const createUserDocument = async (user, additionalData = {}) => {
   if (!user) return;

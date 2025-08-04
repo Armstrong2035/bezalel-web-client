@@ -15,7 +15,7 @@ export function useAuthRedirect() {
 
       if (user) {
         // Delay to ensure Firestore updates propagate
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         const userDoc = await getUserDocument(user.uid);
         const onboardingCompleted = userDoc?.onboardingCompleted || false;
 
