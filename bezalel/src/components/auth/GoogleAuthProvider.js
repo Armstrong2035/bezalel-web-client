@@ -2,12 +2,15 @@
 import { Box, Typography, Stack, IconButton } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
 import { signInWithGoogle } from "@/firebase/auth";
+import { useRouter } from "next/navigation";
 
 export default function GoogleAuthProvider({ cta }) {
+  const router = useRouter();
   const handleGoogleSignIn = async () => {
     try {
       const { user } = await signInWithGoogle();
-      if (user && cta === "Sign up") {
+      if (user) {
+        await router.push("/segments");
       }
       return cta === "Sign up" ? user.uid : null;
     } catch (error) {

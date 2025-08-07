@@ -82,6 +82,23 @@ const onboardingQuestions = [
     ],
   },
   {
+    id: "background",
+    emoji: "🛠️",
+    question: "What's your strongest skill area?",
+    explanation:
+      "This helps us suggest execution paths that play to your strengths",
+    type: "multiple-choice",
+    options: [
+      "Technical/Product Development",
+      "Marketing/Growth",
+      "Sales/Business Dev",
+      "Design/Creative",
+      "Operations/Process",
+      "Domain expertise in your industry",
+      "None of the above",
+    ],
+  },
+  {
     id: "archetype",
     emoji: "🧬",
     question: "What type of business is this?",

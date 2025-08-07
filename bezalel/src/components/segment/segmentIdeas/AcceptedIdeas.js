@@ -44,7 +44,7 @@ export default function AcceptedIdeasList() {
           idea={idea}
           onVote={handleVote}
           onViewDetails={handleViewDetails}
-        ></AcceptedIdeaCard>
+        />
       ))}
     </Stack>
   );

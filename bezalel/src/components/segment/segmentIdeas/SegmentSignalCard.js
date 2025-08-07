@@ -6,6 +6,7 @@ import {
   Card,
   CardContent,
   CardHeader,
+  IconButton,
 } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import HelpIcon from "@mui/icons-material/Help";
@@ -42,10 +43,30 @@ export default function SegmentSignalCard({ signal }) {
         background: "#181818",
         width: "100%",
         borderLeft: `5px solid ${getColor(signal.type)}`,
+        backgroundColor: "rgba(40, 40, 40, 0.7)",
+        borderRadius: 3,
+        cursor: "pointer",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        borderTop: "1px solid rgba(255,255,255,0.1)",
+        borderBottom: "1px solid rgba(255,255,255,0.1)",
+        borderRight: "1px solid rgba(255,255,255,0.1)",
+        "&:hover": {
+          transform: "translateY(-8px) scale(1.02)",
+          boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+          "& .arrow-icon": {
+            transform: "translate(4px, -4px)",
+            opacity: 1,
+          },
+          "& .card-content": {
+            transform: "translateY(-4px)",
+          },
+        },
+        "&:active": {
+          transform: "translateY(-4px) scale(1.01)",
+        },
       }}
     >
       <CardHeader
-        //avatar={<Icon>{getIcon(signal.type, { color: "white" })}</Icon>}
         title={
           <Typography sx={{ color: "whitesmoke" }}>{signal.label}</Typography>
         }

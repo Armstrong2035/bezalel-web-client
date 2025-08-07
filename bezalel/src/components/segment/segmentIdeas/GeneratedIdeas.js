@@ -1,11 +1,11 @@
 import { Box, Typography, Stack } from "@mui/material";
 import IdeaCard from "./IdeaCard";
 
-function StackIndicator({ count, current }) {
+function StackIndicator({ cards, count, current }) {
   // Dots for each idea, highlight the current one
   return (
     <Stack direction="row" spacing={0.5} alignItems="center" sx={{ ml: 1 }}>
-      {Array.from({ length: count }).map((_, i) => (
+      {Array.from({ length: cards.length }).map((_, i) => (
         <Box
           key={i}
           sx={{

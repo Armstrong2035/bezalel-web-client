@@ -16,11 +16,11 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { app } from "./config"; // Assuming your firebase config is in './config.js'
+import { db } from "./config";
 
 // --- INITIALIZE SERVICES ---
 // These are exported so they can be used throughout your application
 export const auth = getAuth(app);
-export const db = getFirestore(app);
 
 // --- GOOGLE AUTH PROVIDER ---
 export const googleProvider = new GoogleAuthProvider();
