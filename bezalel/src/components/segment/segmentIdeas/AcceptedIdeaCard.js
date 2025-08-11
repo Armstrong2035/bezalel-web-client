@@ -31,7 +31,12 @@ export default function AcceptedIdeaCard({
         backgroundColor: "#1E1E1E",
         borderRadius: 2,
         color: "#fff",
-        width: "100%",
+        height: "70vh",
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "rgba(40, 40, 40, 0.7)",
+        borderRadius: 3,
+        border: "1px solid rgba(255,255,255,0.1)",
         boxShadow: total === 1 ? 3 : undefined, // subtle shadow if only one idea
         backgroundColor: "rgba(40, 40, 40, 0.7)",
         borderRadius: 3,

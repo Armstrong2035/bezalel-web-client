@@ -1,45 +1,15 @@
-import { Box, Typography, Stack } from "@mui/material";
+import { Box, Typography, Stack, Grid } from "@mui/material";
 import IdeaCard from "./IdeaCard";
 
-function StackIndicator({ cards, count, current }) {
-  // Dots for each idea, highlight the current one
-  return (
-    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ ml: 1 }}>
-      {Array.from({ length: cards.length }).map((_, i) => (
-        <Box
-          key={i}
-          sx={{
-            width: 8,
-            height: 16,
-            borderRadius: 4,
-            backgroundColor: i === current ? "#FACC15" : "#444",
-            opacity: i === current ? 1 : 0.5,
-            transition: "background 0.2s, opacity 0.2s",
-          }}
-        />
-      ))}
-    </Stack>
-  );
-}
-
-export default function GeneratedIdeas({ cards, currentCardIndex, segment }) {
+export default function GeneratedIdeas({ cards, segment }) {
   const total = cards.length;
   return (
-    <Stack>
-      <Typography variant="h6" align="left" sx={{ color: "white", mb: 2 }}>
-        Recommended Ideas
-      </Typography>
-      {cards[currentCardIndex] && (
-        <Box>
-          <IdeaCard
-            key={currentCardIndex}
-            card={cards[currentCardIndex]}
-            index={currentCardIndex}
-            total={total}
-            control={"vote"}
-          />
-        </Box>
-      )}
-    </Stack>
+    <Grid container justifyContent={"center"} spacing={4}>
+      {cards.map((card, index) => (
+        <Grid item key={index} size={{ md: 4, sm: 6, xs: 12 }}>
+          <IdeaCard total={total} control={"vote"} card={card} />
+        </Grid>
+      ))}
+    </Grid>
   );
 }

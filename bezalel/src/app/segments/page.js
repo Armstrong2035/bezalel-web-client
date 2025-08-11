@@ -46,8 +46,9 @@ export default function Segments() {
       unsubscribe(); // Cleanup on unmount
     };
   }, [uid]);
+  //console.log(onboardingData);
 
-  console.log(segments);
+  //console.log(segments);
 
   // let valuePropositionsData = segments.segments.valueProposition;
 

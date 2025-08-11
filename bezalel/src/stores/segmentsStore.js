@@ -9,6 +9,10 @@ const useSegmentsStore = create(
         set((state) => ({
           segments: { ...state.segments, ...data },
         })),
+
+      acceptedIdeas: [],
+      setAcceptedIdeas: (data) =>
+        set((state) => ({ acceptedIdeas: [...state.acceptedIdeas, data] })),
     }),
     {
       name: "segments-storage",

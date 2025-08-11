@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Stack, Typography, IconButton } from "@mui/material";
+import { Stack, Typography, IconButton, Grid } from "@mui/material";
 import AcceptedIdeaCard from "./AcceptedIdeaCard";
 
 const initialIdeas = [
@@ -34,18 +34,17 @@ export default function AcceptedIdeasList() {
   };
 
   return (
-    <Stack spacing={2} sx={{ width: "100%" }}>
-      <Typography variant="h6" align="left" sx={{ color: "white", mb: 2 }}>
-        Focus Ideas
-      </Typography>
-      {ideas.map((idea) => (
-        <AcceptedIdeaCard
-          key={idea.id}
-          idea={idea}
-          onVote={handleVote}
-          onViewDetails={handleViewDetails}
-        />
+    <Grid container justifyContent={"center"} spacing={4}>
+      {ideas.map((idea, index) => (
+        <Grid item key={index}>
+          <AcceptedIdeaCard
+            key={idea.id}
+            idea={idea}
+            onVote={handleVote}
+            onViewDetails={handleViewDetails}
+          />
+        </Grid>
       ))}
-    </Stack>
+    </Grid>
   );
 }

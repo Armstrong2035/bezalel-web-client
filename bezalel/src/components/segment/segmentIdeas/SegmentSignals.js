@@ -1,4 +1,4 @@
-import { Stack, Typography, Paper, Box } from "@mui/material";
+import { Stack, Typography, Paper, Box, Grid } from "@mui/material";
 import SegmentSignalCard from "./SegmentSignalCard";
 
 const signals = [
@@ -28,21 +28,17 @@ const signals = [
 
 export default function SegmentSignals() {
   return (
-    <Stack spacing={3}>
-      <Typography
-        alignSelf="left"
-        variant="h6"
-        sx={{
-          color: "white",
-        }}
-      >
-        Signals
-      </Typography>
+    <Grid
+      container
+      justifyContent={"center"}
+      spacing={4}
+      sx={{ px: { md: 20, xs: 3 } }}
+    >
       {signals.map((signal, index) => (
-        <Box key={index}>
+        <Grid item key={index}>
           <SegmentSignalCard signal={signal} />
-        </Box>
+        </Grid>
       ))}
-    </Stack>
+    </Grid>
   );
 }

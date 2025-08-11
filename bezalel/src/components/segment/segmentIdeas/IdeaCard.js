@@ -70,35 +70,22 @@ export default function IdeaCard({ card, index, total, control }) {
       }}
     >
       <CardHeader
-        // title={
-
-        // }
-        subheader={
-          total > 1 ? (
-            <StackIndicator count={total} current={index} />
-          ) : (
-            <Typography
-              variant="caption"
-              sx={{ color: "#FACC15", fontWeight: 500 }}
-            >
-              Idea #1 of 1
-            </Typography>
-          )
+        title={
+          <Typography
+            sx={{
+              color: "white",
+              fontWeight: 600,
+              fontSize: "20px",
+              fontWeight: 700,
+              margin: "16px 0 8px 0",
+              lineHeight: 1.3,
+            }}
+          >
+            {card.title}
+          </Typography>
         }
       />
       <CardContent>
-        <Typography
-          sx={{
-            color: "white",
-            fontWeight: 600,
-            fontSize: "20px",
-            fontWeight: 700,
-            margin: "16px 0 8px 0",
-            lineHeight: 1.3,
-          }}
-        >
-          {card.title}
-        </Typography>
         <Typography
           sx={{
             mt: 1,
