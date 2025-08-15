@@ -4,9 +4,10 @@ import {
   timeAvailabilities,
   goals,
   archetypes,
-} from "../decisionEngine/businessTypePathways/pathwayPrompts.js";
+  journeyStages,
+  backgroundStrengths,
+} from "../decisionEngine/pathwayPrompts.js";
 import { segmentPrompts } from "./segmentPrompts.js";
-import { getUserCanvas } from "../../services/canvasSegmentService.js";
 
 export const canvasSegmentSchema = {
   segment: "", //e.g value proposition, customer segment, etc.
@@ -17,53 +18,26 @@ export const createPrompt = async (context, segment, userId) => {
   try {
     // Get user's existing canvas and decisions
     let decisionContext = "";
-    if (userId) {
-      const existingCanvas = await getUserCanvas(userId);
-      if (existingCanvas && existingCanvas.decisions) {
-        const decisionText = Object.entries(existingCanvas.decisions)
-          .map(([seg, data]) => {
-            try {
-              const summary = JSON.parse(data.summary);
-              return `${seg}:
-  - Selected: ${summary.selectedCount} options
-  - Options: ${summary.selectedTitles.join(", ")}
-  - Key insights: ${summary.keyInsights
-    .map(
-      (insight) =>
-        `${insight.title}: ${insight.description.substring(0, 100)}...`
-    )
-    .join(" | ")}`;
-            } catch (e) {
-              // Fallback for old format
-              return `${seg}: ${data.summary}`;
-            }
-          })
-          .join("\n\n");
-
-        if (decisionText) {
-          decisionContext = `\n\n=== PREVIOUS DECISIONS ===
-${decisionText}
-
-Use these previous decisions to inform your recommendations for ${segment}. Consider:
-- The specific options the user has already chosen
-- The themes and focus areas from their selected descriptions
-- How your recommendations can build upon their chosen action plans
-
-=== END PREVIOUS DECISIONS ===\n`;
-        }
-      }
-    }
+    // if (userId) {
+    //   const existingCanvas = await getUserCanvas(userId);
+    //   //Receive deicisons and add to prompts as objects.
+    // }
 
     // Build the base prompt with instructions using the provided context
     const basePrompt = `
 You are a helpful assistant that helps users create a business model canvas.
 
-The user's idea is ${context.idea}.
-The user's experience level is ${levels[context.experienceLevel]}.
-The user's goal is ${goals[context.goal]}.
-The user's time availability is ${timeAvailabilities[context.timeAvailability]}.
-The user's capital is ${capitalOptions[context.capital]}.
-The user's archetype is ${archetypes[context.archetype]}.${decisionContext}
+The business idea is: ${context.idea}.
+
+Your instructions are as follows for this user: 
+${levels[context.experienceLevel]}.
+${goals[context.goal]}.
+${timeAvailabilities[context.timeAvailability]}.
+${capitalOptions[context.capital]}.
+${archetypes[context.archetype]}.
+${journeyStages[context.journey]}.
+${backgroundStrengths[context.background]}.
+
 
 ${segmentPrompts[segment]}
 

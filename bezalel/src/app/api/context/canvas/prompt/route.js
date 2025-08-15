@@ -1,13 +1,12 @@
-import { createPrompt } from "@/lib/engines/canvasEngine/canvasSchema";
-import { generateCanvasSegment } from "@/lib/services/llmService";
-import {
-  saveCanvasSegment,
-  getUserCanvas,
-} from "@/lib/services/canvasSegmentService";
+import { createPrompt } from "@/app/lib/engines/canvasEngine/canvasSchema";
+import { generateCanvasSegment } from "@/app/lib/services/llmService";
+import { saveGeneratedIdea } from "@/app/lib/services/canvasSegmentService";
 
 export async function POST(request) {
   try {
     const { context, userId, segment } = await request.json();
+
+    console.log(context, userId, segment);
 
     if (!context) {
       return Response.json(
@@ -22,33 +21,35 @@ export async function POST(request) {
       return Response.json({ error: "segment is required" }, { status: 400 });
     }
 
-    // Check if we have a cached response for this segment
-    const existingCanvas = await getUserCanvas(userId);
-    if (existingCanvas && existingCanvas.segments[segment]) {
-      return Response.json({
-        canvasId: existingCanvas.id,
-        segment: existingCanvas.segments[segment],
-        decisions: existingCanvas.decisions,
-      });
-    }
-
-    // Create the prompt with context and previous decisions
+    // Create the prompt with context
     const prompt = await createPrompt(context, segment, userId);
 
-    // Generate response using LLM
-    const response = await generateCanvasSegment(prompt);
+    const llmResponse = await generateCanvasSegment(prompt);
+    console.log(llmResponse);
 
-    // Save the response to the user's canvas
-    const savedCanvas = await saveCanvasSegment(
-      userId,
-      segment,
-      response.response.options
+    // Save each generated idea as its own document in Firestore
+    const savedIdeas = await Promise.all(
+      llmResponse.options.map(async (option) => {
+        const ideaData = {
+          segment: llmResponse.segment,
+          ...option,
+        };
+
+        const ideaId = await saveGeneratedIdea(userId, ideaData);
+
+        // Return the saved idea with its Firestore ID
+        return {
+          id: ideaId,
+          ...ideaData,
+          accepted: false,
+        };
+      })
     );
 
     return Response.json({
-      canvasId: savedCanvas.id,
-      segment: savedCanvas.segments[segment],
-      decisions: savedCanvas.decisions,
+      success: true,
+      ideas: savedIdeas,
+      count: savedIdeas.length,
     });
   } catch (error) {
     console.error("Error processing prompt request:", error);

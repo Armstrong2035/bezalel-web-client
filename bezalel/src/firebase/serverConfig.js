@@ -10,8 +10,8 @@ const __dirname = path.dirname(__filename);
 // Load environment variables from .env
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-console.log("Firebase Project ID", process.env.FIREBASE_PROJECT_ID);
-console.log("Firebase private key", process.env.FIREBASE_PRIVATE_KEY);
+// console.log("Firebase Project ID", process.env.FIREBASE_PROJECT_ID);
+// console.log("Firebase private key", process.env.FIREBASE_PRIVATE_KEY);
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -32,8 +32,8 @@ if (!admin.apps.length) {
       universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN,
     };
 
-    console.log("Firebase Project ID", process.env.FIREBASE_PROJECT_ID);
-    console.log("Firebase private key", process.env.FIREBASE_PRIVATE_KEY);
+    // console.log("Firebase Project ID", process.env.FIREBASE_PROJECT_ID);
+    // console.log("Firebase private key", process.env.FIREBASE_PRIVATE_KEY);
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),

@@ -4,6 +4,11 @@ import { persist } from "zustand/middleware";
 export const useOnboardingStore = create(
   persist(
     (set) => ({
+      userData: {},
+      setUserData: (data) =>
+        set((state) => ({
+          userData: { ...state.userData, data },
+        })),
       onboardingData: {
         idea: "",
         journey: "",
@@ -30,6 +35,7 @@ export const useOnboardingStore = create(
           },
         })),
     }),
+
     {
       name: "onboarding-storage",
     }
