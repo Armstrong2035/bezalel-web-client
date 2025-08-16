@@ -13,21 +13,27 @@ export const saveGeneratedIdea = async (userId, ideaData) => {
   }
 
   try {
-    // Define the Firestore collection path using the Firebase Admin SDK syntax
-    const canvasCollectionRef = db
+    // Define the Firestore collection path
+    // We'll use the doc() method without an ID to create a new, auto-generated ID first.
+    const canvasDocRef = db
       .collection("users")
       .doc(userId)
-      .collection("canvasSegments");
+      .collection("canvasSegments")
+      .doc();
 
-    // Add a new document to the collection
-    const docRef = await canvasCollectionRef.add({
+    // Now, we can get the auto-generated ID from the document reference
+    const docId = canvasDocRef.id;
+
+    // Use set() instead of add() to explicitly set the document with the data,
+    // including the new ID field.
+    await canvasDocRef.set({
       ...ideaData,
-      // Use the serverTimestamp from the admin SDK for a secure, server-generated timestamp
+      id: docId, // **This is the key change!** We add the document ID to the data.
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    console.log("Document successfully written with ID:", docRef.id);
-    return docRef.id;
+    console.log("Document successfully written with ID:", docId);
+    return docId;
   } catch (error) {
     console.error("Error writing document:", error);
     throw new Error("Failed to save idea to Firestore.");

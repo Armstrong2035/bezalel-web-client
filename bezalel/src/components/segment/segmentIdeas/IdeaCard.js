@@ -9,27 +9,6 @@ import {
 } from "@mui/material";
 import VoteControl from "./Vote";
 
-function StackIndicator({ count, current }) {
-  // Dots for each idea, highlight the current one
-  return (
-    <Stack direction="row" spacing={0.5} alignItems="center">
-      {Array.from({ length: count }).map((_, i) => (
-        <Box
-          key={i}
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: i === current ? "#FACC15" : "#444",
-            opacity: i === current ? 1 : 0.5,
-            transition: "background 0.2s, opacity 0.2s",
-          }}
-        />
-      ))}
-    </Stack>
-  );
-}
-
 export default function IdeaCard({ card, index, total, control }) {
   const executionScore = () => {
     const ease = card.scores.easeOfExecution.score || 0;
@@ -41,6 +20,8 @@ export default function IdeaCard({ card, index, total, control }) {
 
     return Math.round(median); // e.g. 8 -> 80%
   };
+
+  console.log("Card Data:", card);
 
   return (
     <Card

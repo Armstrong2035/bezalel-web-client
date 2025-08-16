@@ -13,10 +13,10 @@ export default function GeneratedIdeas({ cards, segment }) {
   const uid = userData.data.uid;
   const total = cards.length;
 
-  console.log(segment);
-  console.log(uid);
+  // console.log(segment);
+  // console.log(uid);
 
-  console.log(onboardingData);
+  // console.log(onboardingData);
 
   const generateIdeas = async () => {
     // console.log("Clicked");

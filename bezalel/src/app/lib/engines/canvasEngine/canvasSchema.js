@@ -43,7 +43,7 @@ ${segmentPrompts[segment]}
 
 Return your response in the following JSON structure:
 {
-  "segment": "string",
+  "segment": "${segment}",
   "options": [
     {
       "id": "string",

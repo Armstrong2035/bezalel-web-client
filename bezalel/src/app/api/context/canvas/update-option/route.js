@@ -1,8 +1,8 @@
-import { updateOptionStatus } from "@/lib/services/canvasSegmentService";
+import { updateIdeaStatus } from "@/app/lib/services/canvasSegmentService";
 
 export async function PATCH(request) {
   try {
-    const { canvasId, segment, optionId, status } = await request.json();
+    const { canvasId, segment, status } = await request.json();
 
     if (!canvasId || !segment || !optionId) {
       return Response.json(

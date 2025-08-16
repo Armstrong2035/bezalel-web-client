@@ -1,4 +1,5 @@
 import { Poppins } from "next/font/google";
+import AppProviders from "./hooks/AppProviders";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -13,7 +14,7 @@ export default function RootLayout({ children }) {
         className={poppins.className}
         style={{ backgroundColor: "#000000", padding: 0, margin: 0 }}
       >
-        {children}
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

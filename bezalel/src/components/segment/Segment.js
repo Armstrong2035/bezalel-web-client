@@ -25,15 +25,15 @@ export default function Segment({ segment, segmentData }) {
   const [rejectedCards, setRejectedCards] = useState([]);
   const [activeSection, setActiveSection] = useState(0);
 
-  const cards = segmentData.options;
+  const cards = segmentData;
 
-  console.log(cards);
+  // console.log(cards);
 
   const navigation = [
     {
       tite: "Generated Ideas",
       icon: <TipsAndUpdatesIcon />,
-      count: 2,
+      count: cards.length || 0,
     },
     {
       tite: "Accepted Ideas",
