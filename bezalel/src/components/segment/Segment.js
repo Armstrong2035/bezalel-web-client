@@ -21,11 +21,14 @@ import React from "react";
 import { Book } from "@mui/icons-material";
 
 export default function Segment({ segment, segmentData }) {
-  const [acceptedCards, setAcceptedCards] = useState([]);
-  const [rejectedCards, setRejectedCards] = useState([]);
   const [activeSection, setActiveSection] = useState(0);
 
   const cards = segmentData;
+
+  const acceptedCards = cards.filter(
+    (card) => card.accepted === true && card.segment === segment
+  );
+  const rejectedCards = cards.filter((card) => card.accepted === false);
 
   // console.log(cards);
 
@@ -38,13 +41,13 @@ export default function Segment({ segment, segmentData }) {
     {
       tite: "Accepted Ideas",
       icon: <BookmarksIcon />,
-      count: 4,
+      count: acceptedCards.length || 0,
     },
-    {
-      tite: "Signals",
-      icon: <CrisisAlertIcon />,
-      count: 6,
-    },
+    // {
+    //   tite: "Signals",
+    //   icon: <CrisisAlertIcon />,
+    //   count: 6,
+    // },
   ];
 
   const renderSection = (cards, segment) => {
@@ -53,10 +56,11 @@ export default function Segment({ segment, segmentData }) {
     }
 
     if (activeSection === 1) {
-      return <AcceptedIdeasList cards={cards} segment={segment} />;
-    } else {
-      return <SegmentSignals cards={cards} segment={segment} />;
+      return <AcceptedIdeasList cards={acceptedCards} segment={segment} />;
     }
+    // } else {
+    //   return <SegmentSignals cards={cards} segment={segment} />;
+    // }
   };
 
   return (

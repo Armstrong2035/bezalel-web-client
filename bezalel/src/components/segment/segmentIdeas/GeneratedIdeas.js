@@ -4,15 +4,17 @@ import IdeaCard from "./IdeaCard";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import convertOnboardingData from "@/components/onboarding/helpers/covertOnboardingData";
 import { useState } from "react";
+import { useAuth } from "@/app/hooks/useAuth";
 
 export default function GeneratedIdeas({ cards, segment }) {
   const [error, setError] = useState();
   const [loading, setLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const onboardingData = useOnboardingStore((state) => state.onboardingData);
-  const userData = useOnboardingStore((state) => state.userData);
-  const uid = userData.data.uid;
-  const total = cards.length;
+  const { uid } = useAuth();
+  // const userData = useOnboardingStore((state) => state.userData);
+  // const uid = userData.data.uid;
+  //const total = cards.length;
 
   const handleAccepted = async (ideaId, accepted) => {
     if (!uid) {
@@ -102,12 +104,7 @@ export default function GeneratedIdeas({ cards, segment }) {
       <Grid container justifyContent={"center"} spacing={4}>
         {cards.map((card, index) => (
           <Grid item key={index} size={{ md: 4, sm: 6, xs: 12 }}>
-            <IdeaCard
-              total={total}
-              control={"vote"}
-              card={card}
-              handleAccepted={handleAccepted}
-            />
+            <IdeaCard control={"vote"} card={card} function={handleAccepted} />
           </Grid>
         ))}
       </Grid>
