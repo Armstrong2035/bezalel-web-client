@@ -53,20 +53,21 @@ export const updateIdeaStatus = async (userId, ideaId, accepted) => {
   }
 
   try {
-    // Define the Firestore document path using the Firebase Admin SDK syntax
+    // Construct the document reference to the specific idea
     const ideaRef = db
       .collection("users")
       .doc(userId)
       .collection("canvasSegments")
       .doc(ideaId);
 
-    // Update the document with the new 'accepted' status and timestamp
+    // Update the document with the new 'accepted' status and a server timestamp
     await ideaRef.update({
       accepted,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
     console.log(`Document ${ideaId} successfully updated.`);
+    return { success: true, message: `Idea ${ideaId} status updated.` };
   } catch (error) {
     console.error(`Error updating document ${ideaId}:`, error);
     throw new Error("Failed to update idea status.");

@@ -8,10 +8,45 @@ import { useState } from "react";
 export default function GeneratedIdeas({ cards, segment }) {
   const [error, setError] = useState();
   const [loading, setLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const onboardingData = useOnboardingStore((state) => state.onboardingData);
   const userData = useOnboardingStore((state) => state.userData);
   const uid = userData.data.uid;
   const total = cards.length;
+
+  const handleAccepted = async (ideaId, accepted) => {
+    if (!uid) {
+      console.error("User not authenticated.");
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      const response = await fetch("/api/context/canvas/update-option", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: uid,
+          ideaId,
+          accepted,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update idea status.");
+      }
+
+      const result = await response.json();
+      console.log("Update successful:", result);
+    } catch (error) {
+      console.error("Error updating idea status:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   // console.log(segment);
   // console.log(uid);
@@ -67,7 +102,12 @@ export default function GeneratedIdeas({ cards, segment }) {
       <Grid container justifyContent={"center"} spacing={4}>
         {cards.map((card, index) => (
           <Grid item key={index} size={{ md: 4, sm: 6, xs: 12 }}>
-            <IdeaCard total={total} control={"vote"} card={card} />
+            <IdeaCard
+              total={total}
+              control={"vote"}
+              card={card}
+              handleAccepted={handleAccepted}
+            />
           </Grid>
         ))}
       </Grid>

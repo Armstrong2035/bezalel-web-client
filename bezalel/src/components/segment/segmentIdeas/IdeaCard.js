@@ -9,7 +9,13 @@ import {
 } from "@mui/material";
 import VoteControl from "./Vote";
 
-export default function IdeaCard({ card, index, total, control }) {
+export default function IdeaCard({
+  card,
+  index,
+  total,
+  control,
+  handleAccepted,
+}) {
   const executionScore = () => {
     const ease = card.scores.easeOfExecution.score || 0;
     const fit = card.scores.marketFit.score || 0;
@@ -22,6 +28,8 @@ export default function IdeaCard({ card, index, total, control }) {
   };
 
   console.log("Card Data:", card);
+
+  const ideaId = card.id;
 
   return (
     <Card
@@ -50,6 +58,7 @@ export default function IdeaCard({ card, index, total, control }) {
         },
       }}
     >
+      {/* Header with title and index */}
       <CardHeader
         title={
           <Typography
@@ -66,6 +75,7 @@ export default function IdeaCard({ card, index, total, control }) {
           </Typography>
         }
       />
+      {/* Description and reasoning */}
       <CardContent>
         <Typography
           sx={{
@@ -78,6 +88,8 @@ export default function IdeaCard({ card, index, total, control }) {
         >
           {card.description}
         </Typography>
+
+        {/* Display reasoning for why this idea fits the user */}
 
         <Box
           sx={{
@@ -104,6 +116,8 @@ export default function IdeaCard({ card, index, total, control }) {
             {card.scores.resourceAlignment.reasoning}
           </Typography>
         </Box>
+
+        {/* Execution Confidence Bar */}
 
         <Box
           sx={{
@@ -169,7 +183,11 @@ export default function IdeaCard({ card, index, total, control }) {
           </Box>
         </Box>
 
-        {control === "vote" && <VoteControl />}
+        {/* Control Buttons */}
+
+        {control === "vote" && (
+          <VoteControl handleAccepted={handleAccepted} ideaId={ideaId} />
+        )}
       </CardContent>
     </Card>
   );

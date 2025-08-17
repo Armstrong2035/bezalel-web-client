@@ -1,34 +1,32 @@
 import { updateIdeaStatus } from "@/app/lib/services/canvasSegmentService";
+import { NextResponse } from "next/server";
 
 export async function PATCH(request) {
   try {
-    const { canvasId, segment, status } = await request.json();
+    const { userId, ideaId, accepted } = await request.json();
 
-    if (!canvasId || !segment || !optionId) {
-      return Response.json(
-        {
-          error: "canvasId, segment, and optionId are required",
-        },
+    // Check for required fields
+    if (!userId || !ideaId) {
+      return NextResponse.json(
+        { error: "userId and ideaId are required." },
         { status: 400 }
       );
     }
 
-    if (!status || !["accepted", "rejected"].includes(status)) {
-      return Response.json(
-        { error: "Invalid status. Must be 'accepted' or 'rejected'" },
+    // Validate the accepted status
+    if (typeof accepted !== "boolean") {
+      return NextResponse.json(
+        { error: "Status must be a boolean value (true or false)." },
         { status: 400 }
       );
     }
 
-    const updatedCanvas = await updateOptionStatus(
-      canvasId,
-      segment,
-      optionId,
-      status
-    );
+    // Call the service function with the correct arguments
+    const result = await updateIdeaStatus(userId, ideaId, accepted);
 
-    return Response.json(updatedCanvas);
+    return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error("API Route Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
