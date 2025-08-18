@@ -6,15 +6,19 @@ import {
   Box,
   Stack,
   LinearProgress,
+  CardActionArea,
 } from "@mui/material";
 import VoteControl from "./Vote";
+import IdeaHeader from "./IdeaHeader";
+import IdeaAction from "./IdeaAction";
+import { act } from "react";
 
 export default function IdeaCard({
   card,
   index,
   total,
   control,
-  handleAccepted,
+  actionHandler,
 }) {
   const executionScore = () => {
     const ease = card.scores.easeOfExecution.score || 0;
@@ -30,11 +34,12 @@ export default function IdeaCard({
   console.log("Card Data:", card);
 
   const ideaId = card.id;
+  const accepted = control === "modal" ? true : false;
 
   return (
     <Card
       sx={{
-        height: "70vh",
+        // height: "80vh",
         display: "flex",
         flexDirection: "column",
         backgroundColor: "rgba(40, 40, 40, 0.7)",
@@ -59,22 +64,9 @@ export default function IdeaCard({
       }}
     >
       {/* Header with title and index */}
-      <CardHeader
-        title={
-          <Typography
-            sx={{
-              color: "white",
-              fontWeight: 600,
-              fontSize: "20px",
-              fontWeight: 700,
-              margin: "16px 0 8px 0",
-              lineHeight: 1.3,
-            }}
-          >
-            {card.title}
-          </Typography>
-        }
-      />
+
+      <IdeaHeader card={card} accepted={accepted} />
+
       {/* Description and reasoning */}
       <CardContent>
         <Typography
@@ -185,9 +177,11 @@ export default function IdeaCard({
 
         {/* Control Buttons */}
 
-        {control === "vote" && (
-          <VoteControl handleAccepted={handleAccepted} ideaId={ideaId} />
-        )}
+        <IdeaAction
+          control={control}
+          card={card}
+          actionHandler={actionHandler}
+        />
       </CardContent>
     </Card>
   );

@@ -9,7 +9,7 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import IdeaCard from "./segmentIdeas/IdeaCard";
+import IdeaCard from "./segmentIdeas/ideaCard/IdeaCard";
 import { useState } from "react";
 import GeneratedIdeas from "./segmentIdeas/GeneratedIdeas";
 import AcceptedIdeasList from "./segmentIdeas/AcceptedIdeas";

@@ -1,6 +1,6 @@
 import { Box, Typography, Stack, Grid, Fab } from "@mui/material";
 import ShuffleIcon from "@mui/icons-material/Shuffle";
-import IdeaCard from "./IdeaCard";
+import IdeaCard from "./ideaCard/IdeaCard";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import convertOnboardingData from "@/components/onboarding/helpers/covertOnboardingData";
 import { useState } from "react";
@@ -104,7 +104,11 @@ export default function GeneratedIdeas({ cards, segment }) {
       <Grid container justifyContent={"center"} spacing={4}>
         {cards.map((card, index) => (
           <Grid item key={index} size={{ md: 4, sm: 6, xs: 12 }}>
-            <IdeaCard control={"vote"} card={card} function={handleAccepted} />
+            <IdeaCard
+              control={"vote"}
+              card={card}
+              actionHandler={handleAccepted}
+            />
           </Grid>
         ))}
       </Grid>
