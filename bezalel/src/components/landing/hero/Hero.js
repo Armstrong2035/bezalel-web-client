@@ -77,7 +77,6 @@ export default function Hero() {
         }}
       >
         <HeroText />
-
         <Button
           variant="outlined"
           endIcon={<ArrowForwardIcon />}
@@ -85,11 +84,8 @@ export default function Hero() {
           size="large"
           alignSelf="center"
           onClick={() => router.push("/onboarding")}
-        >
-          Tell Bezalel your business Idea
-        </Button>
-
-        {/* <GetStarted /> */}
+        ></Button>
+        Brief the Craftsman
       </Container>
     </Box>
   );
