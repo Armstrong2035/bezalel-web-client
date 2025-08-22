@@ -14,7 +14,7 @@ export default function SegmentHeaders({ isMobile, displayName }) {
           fontSize: { xs: "1.75rem", sm: "2.5rem", md: "3rem" },
         }}
       >
-        Good Morning, {firstName}!
+        Hello, {firstName}!
       </Typography>
       <Typography
         variant="body1"
