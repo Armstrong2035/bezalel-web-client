@@ -45,7 +45,7 @@ export default function AuthPage({ heading, cta, sidebarInfo }) {
             {heading}
           </Typography>
           <GoogleAuthProvider cta={cta} />
-          <EmailAuthProvider cta={cta} />
+          {/* <EmailAuthProvider cta={cta} /> */}
         </Grid>
         <Grid
           item

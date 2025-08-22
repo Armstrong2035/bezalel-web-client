@@ -1,5 +1,6 @@
 import { Poppins } from "next/font/google";
 import AppProviders from "./hooks/AppProviders";
+import LoadingWrapper from "@/components/LoadingWrapper";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -14,7 +15,9 @@ export default function RootLayout({ children }) {
         className={poppins.className}
         style={{ backgroundColor: "#000000", padding: 0, margin: 0 }}
       >
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <LoadingWrapper>{children}</LoadingWrapper>
+        </AppProviders>
       </body>
     </html>
   );

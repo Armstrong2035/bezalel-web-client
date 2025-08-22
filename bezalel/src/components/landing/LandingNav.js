@@ -29,10 +29,10 @@ export default function LandingNav() {
       url: "/",
     },
     right: [
-      {
-        title: "How to build a business",
-        href: "/blog",
-      },
+      // {
+      //   title: "How to build a business",
+      //   href: "/blog",
+      // },
       {
         title: "Sign up",
         href: "/onboarding",
