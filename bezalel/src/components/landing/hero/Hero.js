@@ -84,8 +84,9 @@ export default function Hero() {
           size="large"
           alignSelf="center"
           onClick={() => router.push("/onboarding")}
-        ></Button>
-        Brief the Craftsman
+        >
+          Brief Bezalel
+        </Button>
       </Container>
     </Box>
   );
