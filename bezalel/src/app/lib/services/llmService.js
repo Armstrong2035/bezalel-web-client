@@ -33,8 +33,9 @@ export const generateCanvasSegment = async (prompt, modelName = "flash") => {
   ) {
     try {
       console.log("Using local LLM response for testing...");
-      const localResponse = JSON.parse(fs.readFileSync(localFilePath, "utf-8"));
-      return localResponse;
+      // Correctly read and parse the JSON string from the local file
+      const localResponseText = fs.readFileSync(localFilePath, "utf-8");
+      return JSON.parse(localResponseText);
     } catch (readError) {
       console.error("Error reading or parsing local response file:", readError);
       // Fall through to make an API call if local file is invalid
@@ -85,10 +86,17 @@ export const generateCanvasSegment = async (prompt, modelName = "flash") => {
     }
 
     const data = await response.json();
-    const parsedResponse = JSON.parse(data.candidates[0].content.parts[0].text);
+    const responseText = data.candidates[0].content.parts[0].text;
+
+    // Log the raw text to see what the LLM is actually sending
+    console.log("Raw LLM response text:", responseText);
+
+    // ✅ FIX: Correctly parse the JSON string into a JavaScript object
+    const parsedResponse = JSON.parse(responseText);
 
     // Save the new response for future testing
     console.log("Saving new LLM response to local file...");
+    // ✅ FIX: Correctly stringify the parsed object before saving
     fs.writeFileSync(
       localFilePath,
       JSON.stringify(parsedResponse, null, 2),
@@ -101,84 +109,3 @@ export const generateCanvasSegment = async (prompt, modelName = "flash") => {
     throw new Error("Failed to generate canvas segment from LLM.");
   }
 };
-
-// import Anthropic from "@anthropic-ai/sdk";
-// import fs from "fs"; // 👈 Import the 'fs' module
-// import path from "path"; // 👈 Import the 'path' module for cross-platform compatibility
-
-// const anthropic = new Anthropic({
-//   apiKey: process.env.ANTHROPIC_API_KEY,
-// });
-
-// export const generateCanvasSegment = async (prompt) => {
-//   const localFilePath = path.join(process.cwd(), "llm_response.json");
-
-//   if (
-//     process.env.USE_LOCAL_LLM_RESPONSE === "true" &&
-//     fs.existsSync(localFilePath)
-//   ) {
-//     try {
-//       console.log("Using local LLM response for testing...");
-//       const localResponse = JSON.parse(fs.readFileSync(localFilePath, "utf-8"));
-//       return localResponse;
-//     } catch (readError) {
-//       console.error("Error reading or parsing local response file:", readError);
-//       // Fall through to make an API call if local file is invalid
-//     }
-//   }
-
-//   try {
-//     const response = await anthropic.messages.create({
-//       model: "claude-sonnet-4-20250514",
-//       max_tokens: 4000,
-//       temperature: 0.7,
-//       system:
-//         "You are a business strategy expert helping entrepreneurs create detailed business model canvas segments. You MUST respond with valid JSON only, following the exact structure specified in the prompt. Do not include any explanatory text or markdown formatting. The response must be parseable as JSON.",
-//       messages: [{ role: "user", content: prompt }],
-//     });
-
-//     let responseText = response.content[0].text;
-
-//     // =================================================================
-//     // 👇 NEW: Save the full, raw response to a file for inspection
-//     // const logFilePath = path.join(process.cwd(), "llm_response.log");
-//     // fs.writeFileSync(logFilePath, responseText, "utf-8");
-//     // console.log(`📝 Full LLM response saved to ${logFilePath}`);
-//     // =================================================================
-
-//     // Clean the response by looking for markdown fences
-//     const jsonMatch = responseText.match(/```json\n([\s\S]*)\n```/);
-//     if (jsonMatch && jsonMatch[1]) {
-//       responseText = jsonMatch[1];
-//     }
-//     responseText = responseText.trim();
-
-//     let parsedResponse;
-//     try {
-//       parsedResponse = JSON.parse(responseText);
-//     } catch (parseError) {
-//       console.error("Error parsing cleaned LLM response as JSON:", parseError);
-//       // Also log the text that failed to parse, even after cleaning
-//       console.error("Cleaned text that failed parsing:", responseText);
-//       throw new Error("Invalid response format from LLM after cleaning.");
-//     }
-
-//     if (!parsedResponse.segment || !Array.isArray(parsedResponse.options)) {
-//       throw new Error("Invalid response structure from LLM");
-//     }
-
-//     // Your existing logging and return logic...
-//     return {
-//       prompt,
-//       response: parsedResponse,
-//       usage: {
-//         inputTokens: response.usage.input_tokens,
-//         outputTokens: response.usage.output_tokens,
-//       },
-//     };
-//   } catch (error) {
-//     console.error("Error in generateCanvasSegment:", error.message);
-//     // Re-throw to be caught by the calling API route
-//     throw new Error("Failed to generate canvas segment");
-//   }
-// };

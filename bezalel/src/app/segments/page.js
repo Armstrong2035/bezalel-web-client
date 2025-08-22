@@ -30,7 +30,11 @@ export default function Segments() {
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { user } = useAuth(); // The user object is handled here.
+  const { user, loading: authLoading } = useAuth();
+
+  const displayName = user ? user.displayName : "User";
+
+  //console.log(user);
 
   return (
     <Box
@@ -41,7 +45,7 @@ export default function Segments() {
     >
       <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
         <Box sx={{ pt: { xs: 3, sm: 4, md: 6 }, pb: { xs: 3, sm: 4 } }}>
-          <SegmentHeaders isMobile={isMobile} />
+          <SegmentHeaders isMobile={isMobile} displayName={displayName} />
           <Grid container spacing={3} sx={{ maxWidth: 1200, mx: "auto" }}>
             {canvasSections.map((item) => (
               <Grid

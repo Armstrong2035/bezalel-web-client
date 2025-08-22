@@ -72,7 +72,7 @@ export default function Onboarding() {
   const handleNext = () => {
     if (isLastQuestion) {
       // Submit onboarding data
-      console.log("Onboarding completed:", onboardingData);
+      // console.log("Onboarding completed:", onboardingData);
 
       // Navigate to dashboard or next step
       router.push("/auth/signup");

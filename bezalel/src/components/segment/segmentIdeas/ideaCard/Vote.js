@@ -6,7 +6,7 @@ import { useUpdateIdeaStatus } from "@/app/hooks/useUpdateIdeaStatus";
 export default function VoteControl({ ideaId }) {
   const { updateIdeaStatus, isUpdating } = useUpdateIdeaStatus();
 
-  console.log(ideaId);
+  //console.log(ideaId);
 
   const handleThumbUp = () => {
     updateIdeaStatus(ideaId, true);

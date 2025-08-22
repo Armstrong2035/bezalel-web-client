@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { ArrowForward } from "@mui/icons-material";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function CanvasItem({
   title,
@@ -22,6 +23,9 @@ export default function CanvasItem({
   isCore = false,
   isMobile,
 }) {
+  //console.log(url);
+
+  const router = useRouter();
   return (
     <Link href={`/segments/${url}`} style={{ textDecoration: "none" }}>
       <Fade in timeout={300 + index * 100}>

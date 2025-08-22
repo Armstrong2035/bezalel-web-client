@@ -19,7 +19,7 @@ export const useUpdateIdeaStatus = () => {
     setError(null);
 
     try {
-      const response = await fetch("/api/context/canvas/update-option", {
+      const response = await fetch("/api/update-option", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

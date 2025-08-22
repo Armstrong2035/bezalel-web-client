@@ -19,7 +19,7 @@ export default function GetStarted() {
     e.preventDefault();
     if (businessIdea.trim()) {
       // TODO: Handle the business idea submission
-      console.log("Business idea submitted:", businessIdea);
+      // console.log("Business idea submitted:", businessIdea);
       // Navigate to the next step or process the idea
     }
   };

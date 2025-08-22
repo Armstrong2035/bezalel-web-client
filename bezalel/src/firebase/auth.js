@@ -15,7 +15,7 @@ import {
   getDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { app } from "./config"; // Assuming your firebase config is in './config.js'
+import { app } from "./config"; 
 import { db } from "./config";
 
 // --- INITIALIZE SERVICES ---

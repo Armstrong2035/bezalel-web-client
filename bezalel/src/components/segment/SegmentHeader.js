@@ -1,6 +1,7 @@
 import { Box, Typography } from "@mui/material";
 
-export default function SegmentHeaders({ isMobile }) {
+export default function SegmentHeaders({ isMobile, displayName }) {
+  const firstName = displayName?.split(" ")[0] || "there";
   return (
     <Box sx={{ textAlign: "center", mb: { xs: 3, sm: 4, md: 5 } }}>
       <Typography
@@ -13,7 +14,7 @@ export default function SegmentHeaders({ isMobile }) {
           fontSize: { xs: "1.75rem", sm: "2.5rem", md: "3rem" },
         }}
       >
-        Good Morning, Armstrong!
+        Good Morning, {firstName}!
       </Typography>
       <Typography
         variant="body1"
@@ -24,8 +25,7 @@ export default function SegmentHeaders({ isMobile }) {
           fontSize: { xs: "0.875rem", sm: "1rem" },
         }}
       >
-        Build and refine your business model with our interactive canvas. Click
-        on any section to dive deeper.
+        Build and refine your business model with our interactive canvas.
       </Typography>
     </Box>
   );

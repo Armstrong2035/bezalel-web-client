@@ -8,6 +8,7 @@ import {
   Paper,
   Card,
   CardContent,
+  Breadcrumbs,
 } from "@mui/material";
 import IdeaCard from "./segmentIdeas/ideaCard/IdeaCard";
 import { useState } from "react";
@@ -19,6 +20,8 @@ import BookmarksIcon from "@mui/icons-material/Bookmarks";
 import CrisisAlertIcon from "@mui/icons-material/CrisisAlert";
 import React from "react";
 import { Book } from "@mui/icons-material";
+import Link from "next/link";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 
 export default function Segment({ segment, segmentData }) {
   const [activeSection, setActiveSection] = useState(0);
@@ -64,10 +67,39 @@ export default function Segment({ segment, segmentData }) {
   };
 
   return (
-    <Container sx={{ mt: 1, height: "90vh" }}>
-      <Typography variant="h6" align="center" sx={{ color: "white" }}>
-        {segment}
-      </Typography>
+    <Container
+      sx={{
+        mt: 1,
+        height: "90vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <Breadcrumbs
+        separator={
+          <NavigateNextIcon fontSize="small" sx={{ color: "whitesmoke" }} />
+        }
+        sx={{ mt: 2 }}
+        aria-label="breadcrumb"
+      >
+        <Link href={"/segments"} style={{ textDecoration: "none" }}>
+          <Typography variant="h6" align="center" sx={{ color: "white" }}>
+            Segments
+          </Typography>
+        </Link>
+
+        <Typography
+          variant="h6"
+          align="center"
+          sx={{
+            color: "gray", // or whatever inactive color you want
+            cursor: "default",
+          }}
+        >
+          {segment}
+        </Typography>
+      </Breadcrumbs>
       <Grid
         container
         spacing={5}

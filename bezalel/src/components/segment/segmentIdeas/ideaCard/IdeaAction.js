@@ -8,7 +8,7 @@ export default function IdeaAction({ card, control, actionHandler }) {
       {control === "vote" ? (
         <VoteControl handleAccepted={actionHandler} ideaId={card.id} />
       ) : (
-        <LearnMore />
+        <LearnMore actionHandler={actionHandler} />
       )}
     </Box>
   );

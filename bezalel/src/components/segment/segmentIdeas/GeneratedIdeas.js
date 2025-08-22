@@ -1,31 +1,37 @@
-import { Box, Typography, Stack, Grid, Fab } from "@mui/material";
+import { useState } from "react";
+import { Box, Typography, Stack, Grid, Fab, Backdrop } from "@mui/material";
 import ShuffleIcon from "@mui/icons-material/Shuffle";
 import IdeaCard from "./ideaCard/IdeaCard";
 import { useOnboardingStore } from "@/stores/onboardingStore";
-import convertOnboardingData from "@/components/onboarding/helpers/covertOnboardingData";
-import { useState } from "react";
+import convertOnboardingData from "../../onboarding/helpers/covertOnboardingData";
 import { useAuth } from "@/app/hooks/useAuth";
+import LoadingPage from "../../loading/LoadingPage";
 
+// This component displays generated business ideas and handles user actions
 export default function GeneratedIdeas({ cards, segment }) {
-  const [error, setError] = useState();
-  const [loading, setLoading] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const onboardingData = useOnboardingStore((state) => state.onboardingData);
-  const { uid } = useAuth();
-  // const userData = useOnboardingStore((state) => state.userData);
-  // const uid = userData.data.uid;
-  //const total = cards.length;
+  // Consolidate all loading states into a single variable for clarity
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
+  // Access the current onboarding data from the Zustand store
+  const onboardingData = useOnboardingStore((state) => state.onboardingData);
+  // Access user authentication state
+  const { user, loading: authLoading } = useAuth();
+  const uid = user ? user.uid : null;
+
+  // Handles when a user accepts or rejects an idea.
+  // This will also show a loading state while the action is processed.
   const handleAccepted = async (ideaId, accepted) => {
     if (!uid) {
-      console.error("User not authenticated.");
+      console.error("User not authenticated. Cannot update idea status.");
       return;
     }
 
-    setIsUpdating(true);
+    // Use a single loading state for all async operations
+    setIsLoading(true);
 
     try {
-      const response = await fetch("/api/context/canvas/update-option", {
+      const response = await fetch("/api/update-option", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -42,35 +48,30 @@ export default function GeneratedIdeas({ cards, segment }) {
       }
 
       const result = await response.json();
-      console.log("Update successful:", result);
+      // console.log("Update successful:", result);
     } catch (error) {
       console.error("Error updating idea status:", error);
     } finally {
-      setIsUpdating(false);
+      // Always turn off loading state, regardless of success or failure
+      setIsLoading(false);
     }
   };
 
-  // console.log(segment);
-  // console.log(uid);
-
-  // console.log(onboardingData);
-
+  // Handles the generation of new business ideas
   const generateIdeas = async () => {
-    // console.log("Clicked");
-    //console.log(uid);
     if (!uid) {
       setError("Please log in to generate ideas");
       return;
     }
 
-    setLoading(true);
+    // Set loading state at the beginning of the API call
+    setIsLoading(true);
     setError(null);
 
     const context = await convertOnboardingData(onboardingData);
 
     try {
-      const response = await fetch("/api/context/canvas/prompt", {
-        // Replace with your actual route
+      const response = await fetch("/api/prompt", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -87,17 +88,25 @@ export default function GeneratedIdeas({ cards, segment }) {
         throw new Error(errorData.error || "Failed to generate ideas");
       }
 
+      // We need to parse the JSON response to use it
       const data = await response.json();
-      setIdeas(data.ideas);
-      console.log(`Generated ${data.count} ideas successfully`);
-      console.log(data.ideas);
+
+      // The store should handle updating the ideas, so we just log the success
+      // console.log(`Generated ${data.count} ideas successfully`);
+      // console.log(data.ideas);
     } catch (err) {
       setError(err.message);
       console.error("Error generating ideas:", err);
     } finally {
-      setLoading(false);
+      // Always set loading state to false at the end of the API call
+      setIsLoading(false);
     }
   };
+
+  // Conditionally render the loading page when auth is loading
+  if (authLoading) {
+    return <LoadingPage segment={segment} />;
+  }
 
   return (
     <Box sx={{ position: "relative" }}>
@@ -114,7 +123,7 @@ export default function GeneratedIdeas({ cards, segment }) {
       </Grid>
 
       <Box
-        onClick={() => generateIdeas()}
+        onClick={generateIdeas} // Simplified onClick handler
         sx={{
           position: "fixed",
           bottom: 16,
@@ -126,6 +135,20 @@ export default function GeneratedIdeas({ cards, segment }) {
           <ShuffleIcon />
         </Fab>
       </Box>
+
+      {/* Overlay LoadingPage when isLoading is true */}
+      {isLoading && (
+        <Backdrop
+          sx={{
+            color: "#fff",
+            zIndex: (theme) => theme.zIndex.drawer + 1,
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+          }}
+          open={isLoading}
+        >
+          <LoadingPage segment={segment} />
+        </Backdrop>
+      )}
     </Box>
   );
 }

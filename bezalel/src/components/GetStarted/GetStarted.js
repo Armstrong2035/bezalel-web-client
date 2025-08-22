@@ -17,7 +17,7 @@ export default function GetStarted() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (businessIdea.trim()) {
-      console.log("Business idea submitted:", businessIdea);
+      // console.log("Business idea submitted:", businessIdea);
     }
   };
 

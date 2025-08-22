@@ -108,7 +108,7 @@ const testData = {
   timeAvailability: "15–30 hours a week",
 };
 
-console.log("Original:", testData);
-console.log("Converted:", convertOnboardingData(testData));
+// console.log("Original:", testData);
+// console.log("Converted:", convertOnboardingData(testData));
 
 export default convertOnboardingData;

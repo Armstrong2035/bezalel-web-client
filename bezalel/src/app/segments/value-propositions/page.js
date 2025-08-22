@@ -9,7 +9,6 @@ import { getSegmentIdeas } from "../../../helperFunctions/getSegment";
 
 export default function ValuePropositions() {
   const segments = useSegmentsStore((state) => state.segments);
-  const userData = useOnboardingStore((state) => state.userData);
   const segment = "valueProposition";
   const valueProposition = getSegmentIdeas(segment, segments);
 

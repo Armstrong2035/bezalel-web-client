@@ -23,6 +23,7 @@ export async function POST(request) {
 
     // Create the prompt with context
     const prompt = await createPrompt(context, segment, userId);
+    console.log("prompt sent");
 
     const llmResponse = await generateCanvasSegment(prompt);
     console.log(llmResponse);

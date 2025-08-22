@@ -21,7 +21,7 @@ export function subscribeToCanvasSegments(uid, callback) {
         };
       });
       callback(segmentsData);
-      console.log(segmentsData);
+      // console.log(segmentsData);
     },
     (error) => {
       console.error("Snapshot error:", error);

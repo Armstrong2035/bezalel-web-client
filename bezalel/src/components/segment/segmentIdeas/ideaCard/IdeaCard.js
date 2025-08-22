@@ -31,7 +31,7 @@ export default function IdeaCard({
     return Math.round(median); // e.g. 8 -> 80%
   };
 
-  console.log("Card Data:", card);
+  //  console.log("Card Data:", card);
 
   const ideaId = card.id;
   const accepted = control === "modal" ? true : false;

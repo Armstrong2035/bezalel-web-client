@@ -24,11 +24,15 @@ export default function ProgressBar({
       <Typography
         variant="subtitle1"
         component="h3"
-        sx={{ fontWeight: "semibold", color: "text.primary" }}
+        sx={{ fontWeight: "semibold", color: "whitesmoke" }}
       >
         {label}
       </Typography>
-      <Typography variant="h4" component="p" sx={{ fontWeight: "bold" }}>
+      <Typography
+        variant="h4"
+        component="p"
+        sx={{ fontWeight: "bold", color: "whitesmoke" }}
+      >
         {`${score}/${maxScore}`}
       </Typography>
       <LinearProgress
@@ -43,7 +47,7 @@ export default function ProgressBar({
           },
         }}
       />
-      <Typography variant="caption" sx={{ color: "text.secondary", mt: 1 }}>
+      <Typography variant="caption" sx={{ color: "whitesmoke", mt: 1 }}>
         {description}
       </Typography>
     </Box>

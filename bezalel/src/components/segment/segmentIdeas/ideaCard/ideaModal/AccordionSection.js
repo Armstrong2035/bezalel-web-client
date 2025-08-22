@@ -10,6 +10,7 @@ import {
   AccordionDetails,
 } from "@mui/material";
 import ProgressBar from "./ProgressBar";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 export default function AccordionSection({
   title,
@@ -28,7 +29,7 @@ export default function AccordionSection({
       }}
     >
       <AccordionSummary
-        expandIcon={<ExpandMoreIcon sx={{ color: "gray.400" }} />}
+        expandIcon={<ExpandMoreIcon sx={{ color: "whitesmoke" }} />}
         aria-controls={`${title.toLowerCase().replace(/\s/g, "-")}-content`}
         id={`${title.toLowerCase().replace(/\s/g, "-")}-header`}
         sx={{
@@ -39,7 +40,7 @@ export default function AccordionSection({
       >
         <Typography
           variant="subtitle1"
-          sx={{ fontWeight: "semibold", color: "text.primary" }}
+          sx={{ fontWeight: "semibold", color: "whitesmoke" }}
         >
           {title}
         </Typography>
