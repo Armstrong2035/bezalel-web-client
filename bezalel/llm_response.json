@@ -1,227 +1,209 @@
 {
-  "segment": "valueProposition",
+  "segment": "customerRelationships",
   "options": [
     {
-      "id": "vp_ai_kickstart",
-      "title": "AI-Powered Strategic Kickstart",
-      "description": "Overcome 'blank canvas syndrome' with an AI that instantly generates a comprehensive, internally consistent first draft of your business model canvas based on minimal input, providing a powerful starting point.",
+      "id": "communityEngagement",
+      "title": "Hyper-Local Community Engagement",
+      "description": "Focuses on building a strong rapport with the immediate local community through authentic interaction and organic word-of-mouth, generating initial buzz and repeat business without paid advertising.",
       "assumptionsToTest": [
         {
-          "assumption": "Early-stage entrepreneurs struggle significantly with the initial blank canvas and starting a business model.",
-          "validationMethod": "Conduct user interviews with 10-15 target entrepreneurs, observing their initial interaction with a blank canvas vs. a partially AI-filled one.",
-          "successCriteria": "80% of interviewees express relief or report significant time saving with AI-generated initial content."
+          "assumption": "Local community is active on relevant social platforms/groups.",
+          "validationMethod": "Monitor engagement in local Facebook groups, Nextdoor, or local physical notice boards.",
+          "successCriteria": "5+ engaged conversations or leads per week generated from community outreach."
         },
         {
-          "assumption": "The AI-generated content is perceived as relevant, insightful, and helpful (not generic or obvious).",
-          "validationMethod": "Present AI-generated segments (based on their actual ideas) to 10 target users, asking them to rate relevance, usefulness, and provide specific feedback.",
-          "successCriteria": "Average relevance/usefulness score of 7+/10, with users identifying specific 'aha!' moments or valuable insights."
+          "assumption": "Local influencers/community leaders are willing to promote organically.",
+          "validationMethod": "Invite 5-10 local leaders for a free meal during a soft launch and gauge their willingness to share on their platforms.",
+          "successCriteria": "At least 3 influential individuals post positively about their experience without prompting."
         },
         {
-          "assumption": "Users are willing to accept or refine AI-generated ideas rather than fully deleting and rewriting them.",
-          "validationMethod": "Prototype a simple UI allowing users to accept, reject, or edit generated text. Track interaction patterns with 15 users.",
-          "successCriteria": ">70% acceptance rate or active refinement (editing) rather than full deletion/rewriting of generated content."
+          "assumption": "Customers value personalized interaction and local connection.",
+          "validationMethod": "Observe customer reactions to owner/staff engagement; conduct informal post-meal surveys asking about the service experience.",
+          "successCriteria": "80% positive verbal feedback regarding the personal touch and local focus."
         }
       ],
       "scores": {
         "easeOfExecution": {
-          "score": 8,
-          "reasoning": "A core feature leveraging LLMs; can be mocked up with simple text input/output fields. Low initial UI complexity."
-        },
-        "resourceAlignment": {
           "score": 9,
-          "reasoning": "Leverages existing AI APIs (e.g., OpenAI) for text generation, fitting a zero-cost/bootstrapped approach initially. Minimal custom backend required."
-        },
-        "marketFit": {
-          "score": 9,
-          "reasoning": "Directly addresses a common, painful entry barrier for entrepreneurs and innovators (initial overwhelm), offering high perceived value."
-        }
-      },
-      "actionPlan": {
-        "week1": "Integrate a basic LLM API for text generation. Design a minimal text-based input for user's business idea.",
-        "week2": "Develop logic for generating initial content for 3-4 key canvas segments (e.g., Value Propositions, Customer Segments, Key Activities) based on the user's input.",
-        "week3": "Recruit 5-10 target users for qualitative feedback sessions. Present them with AI-generated segments based on their ideas, focusing on relevance and usefulness.",
-        "week4": "Iterate on AI generation prompts based on user feedback. Implement a simple 'accept/reject/edit' mechanism for the generated text within a basic canvas layout."
-      },
-      "dependencies": {
-        "required": [
-          "Access to a large language model (LLM) API (e.g., OpenAI, Anthropic)"
-        ],
-        "blockedBy": []
-      }
-    },
-    {
-      "id": "vp_context_optimization",
-      "title": "Context-Aware Business Model Optimization",
-      "description": "Ensure holistic coherence: AI dynamically updates and suggests ripple effects across the entire canvas when you modify one segment, identifying new opportunities and preventing inconsistencies.",
-      "assumptionsToTest": [
-        {
-          "assumption": "Users struggle to maintain consistency across different canvas segments when making changes manually.",
-          "validationMethod": "Observe 5-10 users trying to modify a complex canvas. Interview them about the challenges of ensuring consistency and identifying ripple effects.",
-          "successCriteria": "70% of users explicitly report consistency or identifying interdependencies as a significant manual challenge."
-        },
-        {
-          "assumption": "AI-suggested 'ripple effects' (changes/questions for other segments) are perceived as insightful and valuable, leading to better strategic outcomes.",
-          "validationMethod": "Present users with a modified canvas segment and AI's suggested contextual changes/questions for other related segments. Ask for ratings on insightfulness and impact.",
-          "successCriteria": "Average insightfulness score of 8+/10, with users identifying at least one 'new idea' or 'previously missed connection' prompted by the AI."
-        }
-      ],
-      "scores": {
-        "easeOfExecution": {
-          "score": 6,
-          "reasoning": "Requires more sophisticated prompt engineering and state management than simple generation. Incremental development is feasible but more complex."
-        },
-        "resourceAlignment": {
-          "score": 7,
-          "reasoning": "Leverages the same LLM API but needs more complex prompt chaining and context management, potentially increasing API costs slightly. Still bootstrappable."
-        },
-        "marketFit": {
-          "score": 8,
-          "reasoning": "Addresses a higher-level strategic pain point for more experienced founders or teams, providing significant value in ensuring robust, integrated strategy."
-        }
-      },
-      "actionPlan": {
-        "week1": "Define the core data structure for canvas segments to allow for efficient cross-referencing and contextual awareness.",
-        "week2": "Implement a feature where changing one segment (e.g., Customer Segments) triggers AI to generate potential implications or questions for *one* other related segment (e.g., Value Propositions).",
-        "week3": "Conduct qualitative user testing with 5-7 users on the cross-segment suggestion feature. Focus on clarity, usefulness, and strategic impact of the suggestions.",
-        "week4": "Expand the ripple effect generation logic to include 2-3 related segments. Refine AI prompts based on feedback to improve the quality and relevance of contextual suggestions."
-      },
-      "dependencies": {
-        "required": [
-          "Value Proposition 1 (basic canvas generation functionality)"
-        ],
-        "blockedBy": []
-      }
-    },
-    {
-      "id": "vp_iteration_validation",
-      "title": "Frictionless Iteration & Validation Planning",
-      "description": "Systematically test and refine your evolving business models. This AI provides generated validation strategies and assumptions for each segment, alongside version control, to de-risk your venture.",
-      "assumptionsToTest": [
-        {
-          "assumption": "Entrepreneurs desire integrated validation suggestions for individual components of their business model.",
-          "validationMethod": "Survey 20 early-stage entrepreneurs about their biggest challenges in validating ideas; specifically ask if AI-generated validation steps would be useful and how.",
-          "successCriteria": "75% of entrepreneurs express a strong interest in integrated, AI-guided validation planning within a canvas tool."
-        },
-        {
-          "assumption": "The AI's suggested validation methods are practical, achievable, and specific enough for early-stage teams with limited resources.",
-          "validationMethod": "Present AI-generated validation plans (e.g., specific experiments, metrics) for different canvas segments to 10 target users. Ask for detailed feedback on feasibility and applicability.",
-          "successCriteria": "80% of suggested methods are deemed 'highly practical' or 'achievable' by users, with clear actionability."
-        }
-      ],
-      "scores": {
-        "easeOfExecution": {
-          "score": 7,
-          "reasoning": "Generating validation methods is feasible with LLMs. Basic version control (save/restore) can be an MVP, though advanced comparison adds complexity."
-        },
-        "resourceAlignment": {
-          "score": 7,
-          "reasoning": "Builds on existing AI capabilities for text generation. Version control requires some database work but can start simple, aligning with bootstrapping."
-        },
-        "marketFit": {
-          "score": 8,
-          "reasoning": "High value for risk-averse, methodical founders. Directly addresses a critical gap in traditional business planning tools by promoting data-driven decisions."
-        }
-      },
-      "actionPlan": {
-        "week1": "Implement a simple 'save version' functionality for the entire canvas, allowing users to create snapshots.",
-        "week2": "Develop AI prompts to generate 2-3 specific 'Assumptions to Test' and 'Validation Methods' for a chosen canvas segment (e.g., Value Propositions or Customer Segments).",
-        "week3": "Conduct user interviews with 5-7 users, presenting the AI-generated validation suggestions for their ideas. Focus on perceived usefulness and practicality.",
-        "week4": "Iterate on AI prompts for validation suggestions based on feedback. Explore and mock up a basic 'compare two versions' UI to highlight changes between canvas snapshots."
-      },
-      "dependencies": {
-        "required": [
-          "Value Proposition 1 (basic canvas generation functionality)",
-          "Basic data persistence for canvas versions"
-        ],
-        "blockedBy": []
-      }
-    },
-    {
-      "id": "vp_pitch_automation",
-      "title": "Automated Pitch & Communication Tool",
-      "description": "Effortlessly translate your complex business model canvas into clear, concise, and compelling communication outputs (e.g., elevator pitch, executive summary, short presentation slides) for any audience.",
-      "assumptionsToTest": [
-        {
-          "assumption": "Entrepreneurs struggle significantly to articulate their full business model concisely and compellingly for different audiences (investors, partners, team).",
-          "validationMethod": "Interview 10-15 entrepreneurs about their experiences creating pitches or summaries; specifically ask about challenges, time investment, and pain points.",
-          "successCriteria": "85% of entrepreneurs report difficulty or significant time investment in concise, audience-specific articulation, indicating a strong need."
-        },
-        {
-          "assumption": "AI-generated pitches/summaries derived from the canvas are perceived as coherent, complete, and persuasive, requiring minimal manual editing.",
-          "validationMethod": "Present AI-generated pitch variants (e.g., 60-second, 3-minute, executive summary) based on users' own canvas content to 10 target users. Ask for ratings on clarity, completeness, and persuasiveness.",
-          "successCriteria": "Average rating of 7+/10 for coherence and compellingness, with users requiring less than 20% manual editing for their final use."
-        }
-      ],
-      "scores": {
-        "easeOfExecution": {
-          "score": 7,
-          "reasoning": "Relies heavily on LLM capabilities for summarization and rephrasing structured data. Can start with text-only outputs, which simplifies execution."
+          "reasoning": "Primarily involves direct communication and presence; tools are free social media and personal interaction, requiring consistent time but minimal financial outlay."
         },
         "resourceAlignment": {
           "score": 8,
-          "reasoning": "Primarily leverages LLM APIs, fitting a zero-cost/bootstrapped approach well. Minimal custom code beyond prompt engineering and basic display."
+          "reasoning": "High time commitment from owner/staff, but no significant budget. Sustainable if embedded into daily operations and leverages existing human capital."
         },
         "marketFit": {
           "score": 9,
-          "reasoning": "High perceived value for critical business activities like fundraising, partnership building, and internal communication. Directly addresses a frequent and high-stakes pain point."
+          "reasoning": "Many customers, especially for local restaurants, appreciate a personal, community-focused experience, aligning with desires for authenticity and local support."
         }
       },
       "actionPlan": {
-        "week1": "Develop initial AI prompts to generate a simple 'elevator pitch' (1-2 sentences) based on the Value Proposition and Customer Segment fields of the canvas.",
-        "week2": "Expand AI capabilities to generate a longer executive summary (1-2 paragraphs) integrating 3-4 key canvas segments (VP, CS, Revenue Streams, Key Activities).",
-        "week3": "Conduct user testing with 5-7 users: ask them to input their canvas details and evaluate the AI-generated summaries/pitches. Gather feedback on clarity, completeness, and tone.",
-        "week4": "Refine AI prompts based on user feedback to improve the quality of generated content. Explore generating bullet points suitable for a 'pitch deck slide' from the executive summary."
+        "week1": "Identify and join 3-5 key local online community groups. Draft introductory posts about the restaurant's opening and mission. Research 5-10 local community leaders for soft launch invitations.",
+        "week2": "Host soft launch for invited leaders/influencers, encouraging organic sharing. Actively engage in local online groups. Develop a simple 'welcome' message for first-time diners.",
+        "week3": "Implement personalized welcomes and feedback solicitation for all guests. Monitor social media mentions and share user-generated content. Identify 2-3 non-competing local businesses for cross-promotion.",
+        "week4": "Launch a 'bring a friend' referral incentive (e.g., free dessert for both). Initiate conversations with identified local businesses. Analyze initial feedback and social media reach to refine tactics."
       },
       "dependencies": {
         "required": [
-          "Value Proposition 1 (canvas data available and structured)",
-          "Strong LLM capabilities"
+          "Core Menu (operational readiness)",
+          "Staff Training (customer service, mission alignment)"
         ],
-        "blockedBy": []
+        "blockedBy": [
+          "Restaurant opening/soft launch readiness"
+        ]
       }
     },
     {
-      "id": "vp_collaborative_strategy",
-      "title": "AI-Enhanced Collaborative Strategy",
-      "description": "Facilitate seamless team business model development with real-time collaborative editing of the AI-powered canvas, augmented by AI-driven suggestions for integrating feedback and resolving conflicts.",
+      "id": "digitalStorytelling",
+      "title": "Organic Digital Storytelling",
+      "description": "Leverages free digital platforms to share the restaurant's unique story, culinary philosophy, and 'behind-the-scenes' content to attract and retain customers who resonate with its brand values.",
       "assumptionsToTest": [
         {
-          "assumption": "Business model creation is often a collaborative activity that suffers from inefficient digital tools for team feedback and iteration.",
-          "validationMethod": "Observe 3-5 small teams (2-4 people) attempting to build or refine a business model together using current tools. Interview them about the specific challenges of collaborative canvas building.",
-          "successCriteria": "90% of teams report significant inefficiencies or limitations with current collaborative tools for strategic planning."
+          "assumption": "Target customers are active on social media platforms relevant to food content.",
+          "validationMethod": "Monitor engagement rates on posts and track follower growth from target demographics.",
+          "successCriteria": "15%+ average engagement rate on posts; 50+ new relevant followers per week."
         },
         {
-          "assumption": "AI-driven analysis of team comments and discussions (e.g., identifying conflicting ideas, synthesizing feedback) is valuable for teams.",
-          "validationMethod": "Present mocked-up scenarios where AI analyzes team comments on different segments and provides synthesized summaries or highlights areas of disagreement/synergy. Gauge user interest and perceived value.",
-          "successCriteria": "70% of users see clear value in AI-assisted feedback analysis for improving team alignment and efficiency."
+          "assumption": "Restaurant has unique stories/content worth sharing consistently.",
+          "validationMethod": "Brainstorm 10+ content ideas for the first month; gauge staff willingness to participate in content creation.",
+          "successCriteria": "Ability to consistently generate 5-7 distinct content pieces per week without burnout."
+        },
+        {
+          "assumption": "Organic content can translate into foot traffic and sales.",
+          "validationMethod": "Ask new customers how they heard about the restaurant; track specific promotions or dishes featured heavily on social media.",
+          "successCriteria": "20% of new customers mention social media as their discovery source; 10% increase in sales for featured items."
         }
       ],
       "scores": {
         "easeOfExecution": {
-          "score": 5,
-          "reasoning": "Real-time collaborative editing is technically complex, requiring robust backend infrastructure. AI analysis of feedback is also challenging to implement well beyond basic summarization."
+          "score": 7,
+          "reasoning": "Requires consistent effort, creativity, and basic smartphone photography/videography skills. Can be time-consuming to maintain high-quality, engaging content."
         },
         "resourceAlignment": {
-          "score": 5,
-          "reasoning": "Requires significant backend and frontend development for real-time features and user management. AI analysis needs complex prompt engineering. This is a higher investment feature, though an MVP is possible."
+          "score": 9,
+          "reasoning": "Zero direct cost for platforms, but high time investment for content creation and management. Sustainable if content creation is planned and integrated into operations."
         },
         "marketFit": {
-          "score": 7,
-          "reasoning": "High value for larger teams, consultants, or organizations that prioritize collaborative strategic planning. Potential for enterprise-level adoption, but may not be the primary driver for individual entrepreneurs initially."
+          "score": 8,
+          "reasoning": "Modern diners, especially younger demographics, frequently discover and engage with restaurants through visually rich social media content, aligning with current consumer behavior."
         }
       },
       "actionPlan": {
-        "week1": "Implement basic 'share' functionality, allowing a canvas owner to grant view-only or comment-only access to others via a link.",
-        "week2": "Develop functionality to allow multiple authenticated users to simultaneously view and add comments to different segments of a shared canvas in a near real-time fashion.",
-        "week3": "Develop initial AI prompts to analyze all comments within a single canvas segment and summarize key themes, recurring ideas, or potential conflicts.",
-        "week4": "Conduct user testing with 2-3 small teams (2-3 people). Focus on the ease of collaborative commenting and the helpfulness of AI-summarized feedback for team discussion and decision-making."
+        "week1": "Set up/optimize Instagram/Facebook profiles. Brainstorm 15-20 content ideas based on the restaurant's story, menu, and staff. Create a simple content calendar.",
+        "week2": "Post 3-4 pieces of content (photos/short videos) featuring signature dishes, ingredients, or a 'meet the chef' snippet. Experiment with local hashtags.",
+        "week3": "Launch an engaging question-based post or a simple 'guess the ingredient' story poll. Respond to all comments and DMs within 24 hours. Encourage staff to share content.",
+        "week4": "Analyze top-performing content. Plan future content based on engagement. Create a short video showcasing a 'day in the life' or a simple recipe tip."
       },
       "dependencies": {
         "required": [
-          "Value Proposition 1 (canvas structure and data persistence)",
-          "Robust user authentication and authorization system"
+          "High-quality Food (visually appealing)",
+          "Basic Smartphone Camera Skills",
+          "Staff Buy-in for Content"
         ],
-        "blockedBy": []
+        "blockedBy": [
+          "Restaurant operation to have content to share"
+        ]
+      }
+    },
+    {
+      "id": "feedbackVIP",
+      "title": "Direct Feedback Loop & VIP Recognition",
+      "description": "Builds loyalty and increases customer value by actively soliciting and acting on customer feedback, coupled with personalized recognition for repeat patrons to foster a strong sense of belonging.",
+      "assumptionsToTest": [
+        {
+          "assumption": "Customers are willing to provide feedback if asked directly and respectfully.",
+          "validationMethod": "Track the percentage of customers who provide feedback when asked; observe the quality and constructiveness of feedback.",
+          "successCriteria": "70% of asked customers provide feedback; 50% of feedback is constructive."
+        },
+        {
+          "assumption": "Personal recognition and small gestures significantly enhance customer loyalty.",
+          "validationMethod": "Track repeat customer visits after receiving a personalized touch; observe their expressed satisfaction.",
+          "successCriteria": "30% increase in repeat visits from recognized customers within 2 months."
+        },
+        {
+          "assumption": "Listening to feedback leads to tangible improvements that resonate with the customer base.",
+          "validationMethod": "Implement 2-3 specific changes based on recurring feedback and observe subsequent customer comments.",
+          "successCriteria": "Positive mentions of implemented changes from 20%+ of customers providing new feedback."
+        }
+      ],
+      "scores": {
+        "easeOfExecution": {
+          "score": 8,
+          "reasoning": "Requires consistent staff training and attentiveness, but the primary tools are observation, conversation, and a basic internal tracking system."
+        },
+        "resourceAlignment": {
+          "score": 9,
+          "reasoning": "Relies heavily on owner/staff time and soft skills, with virtually no monetary cost. Incentives can be food-based, leveraging existing inventory."
+        },
+        "marketFit": {
+          "score": 9,
+          "reasoning": "High customer demand for personalized service, feeling heard, and being valued, especially in local establishments where relationships matter."
+        }
+      },
+      "actionPlan": {
+        "week1": "Train staff on how to politely ask for feedback and observe customer reactions. Create a simple 'VIP' tracking system (e.g., Google Sheet for names, preferences, visit frequency).",
+        "week2": "Implement proactive feedback solicitation for first-time guests, offering a small, free future incentive. Begin logging observations about regular customers.",
+        "week3": "Start recognizing 5-10 regular 'VIP' customers by name and their known preferences. Identify 2-3 recurring feedback points for potential operational improvements.",
+        "week4": "Implement one small operational change based on feedback. Invite 3-5 loyal customers for an informal tasting of a potential new menu item (free to them, valuable feedback for you)."
+      },
+      "dependencies": {
+        "required": [
+          "Staff Training (customer service)",
+          "Owner/Manager Presence"
+        ],
+        "blockedBy": [
+          "Restaurant being operational to gather feedback"
+        ]
+      }
+    },
+    {
+      "id": "localPartnerships",
+      "title": "Strategic Local Partnerships",
+      "description": "Forges mutually beneficial relationships with complementary local businesses to expand reach, share customer bases, and create unique joint offerings without direct marketing spend.",
+      "assumptionsToTest": [
+        {
+          "assumption": "There are local businesses willing to engage in reciprocal, zero-cost partnerships.",
+          "validationMethod": "Identify 10-15 potential partners and initiate outreach; gauge their interest and proposed terms.",
+          "successCriteria": "Secure 3-5 active, zero-cost partnership agreements within 4 weeks."
+        },
+        {
+          "assumption": "Customers of partner businesses are interested in your restaurant (and vice-versa).",
+          "validationMethod": "Track referrals from partners (e.g., specific discount code, mention partner name); observe customer demographics aligning.",
+          "successCriteria": "10+ new customers per week from partnership referrals."
+        },
+        {
+          "assumption": "Joint promotions and events generate new and repeat business for both parties.",
+          "validationMethod": "Track attendance/redemptions for joint promotions; collect feedback on partnership value from customers.",
+          "successCriteria": "Joint events achieve 80%+ capacity; 20% increase in repeat visits from customers acquired via partnerships."
+        }
+      ],
+      "scores": {
+        "easeOfExecution": {
+          "score": 7,
+          "reasoning": "Requires networking skills, negotiation, and coordination with external parties, which can take time to build trust and formalize agreements."
+        },
+        "resourceAlignment": {
+          "score": 8,
+          "reasoning": "Low financial cost, but high time investment in relationship building and management. Requires strategic thinking and active communication, but no cash outlay."
+        },
+        "marketFit": {
+          "score": 8,
+          "reasoning": "Consumers often appreciate local collaboration and unique, community-driven experiences and offers, enhancing perceived value and convenience."
+        }
+      },
+      "actionPlan": {
+        "week1": "Research and list 10-15 non-competing local businesses that align with the restaurant's brand/target audience. Draft a simple proposal for a mutually beneficial zero-cost partnership.",
+        "week2": "Reach out to 5-7 identified partners for initial discussions. Propose a simple cross-promotion (e.g., reciprocal flyer display, social media shout-out exchange).",
+        "week3": "Secure 2-3 initial partnership agreements. Launch the first cross-promotion. Plan a simple joint social media campaign (e.g., 'Local Love' week).",
+        "week4": "Evaluate initial partnership results (e.g., track any referrals). Brainstorm ideas for a first joint (zero-cost) event (e.g., small tasting, themed evening). Reach out to more potential partners."
+      },
+      "dependencies": {
+        "required": [
+          "Owner/Manager Networking Skills",
+          "Clear Brand Identity"
+        ],
+        "blockedBy": [
+          "Restaurant operating to have something to offer partners"
+        ]
       }
     }
   ]
