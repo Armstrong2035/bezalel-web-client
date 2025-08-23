@@ -10,19 +10,19 @@ const API_KEY = process.env.GEMINI_API_KEY;
 
 export const generateCanvasSegment = async (prompt, modelName = "flash") => {
   const localFilePath = path.join(process.cwd(), "llm_response.json");
-  const useLocalResponse = process.env.USE_LOCAL_LLM_RESPONSE === "true";
+  //  const useLocalResponse = process.env.USE_LOCAL_LLM_RESPONSE === "true";
 
   // Check for local file only in development/test environment
-  if (useLocalResponse && fs.existsSync(localFilePath)) {
-    try {
-      console.log("Using local LLM response for testing...");
-      const localResponseText = fs.readFileSync(localFilePath, "utf-8");
-      return JSON.parse(localResponseText);
-    } catch (readError) {
-      console.error("Error reading or parsing local response file:", readError);
-      // Fall through to make an API call if local file is invalid
-    }
-  }
+  // if (useLocalResponse && fs.existsSync(localFilePath)) {
+  //   try {
+  //     console.log("Using local LLM response for testing...");
+  //     const localResponseText = fs.readFileSync(localFilePath, "utf-8");
+  //     return JSON.parse(localResponseText);
+  //   } catch (readError) {
+  //     console.error("Error reading or parsing local response file:", readError);
+  //     // Fall through to make an API call if local file is invalid
+  //   }
+  // }
 
   // Live API call logic (this should be the only path in production)
   const modelId = MODELS[modelName];
