@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function PATCH(request) {
   try {
     const { userId, ideaId, accepted } = await request.json();
-    the;
+
     // Check for required fields
     if (!userId || !ideaId) {
       return NextResponse.json(
