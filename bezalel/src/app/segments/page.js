@@ -27,12 +27,31 @@ import { useSegmentsStore } from "@/stores/segmentsStore";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Segments() {
-  const router = useRouter();
   const theme = useTheme();
+  const segments = useSegmentsStore((state) => state.segments);
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { user, loading: authLoading } = useAuth();
 
   const displayName = user ? user.displayName : "User";
+  //console.log(segments);
+
+  const segmentData = (segment) => {
+    if (
+      segments &&
+      typeof segments === "object" &&
+      Object.keys(segments).length > 0
+    ) {
+      const segmentsArray = Object.values(segments);
+
+      const cards = segmentsArray.filter((item) => item.segment === segment);
+      const acceptedCards = cards.filter((item) => item.accepted === true);
+
+      return { cards, acceptedCards };
+    }
+
+    // Return a fallback if the data is not yet loaded or is empty
+    return { cards: [], acceptedCards: [] };
+  };
 
   //console.log(user);
 
@@ -64,6 +83,8 @@ export default function Segments() {
                   description={item.description}
                   isCore={item.isCore}
                   isMobile={isMobile}
+                  getSegmentData={segmentData}
+                  segment={item.key}
                 />
               </Grid>
             ))}

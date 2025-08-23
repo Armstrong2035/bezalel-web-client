@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Fade,
   Card,
@@ -13,6 +15,9 @@ import {
 import { ArrowForward } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import CounterBadge from "@/components/ui/CounterBadge";
+import TipsAndUpdatesIcon from "@mui/icons-material/TipsAndUpdates";
+import BookmarksIcon from "@mui/icons-material/Bookmarks";
 
 export default function CanvasItem({
   title,
@@ -20,12 +25,27 @@ export default function CanvasItem({
   url,
   icon: IconComponent,
   description,
-  isCore = false,
   isMobile,
+  getSegmentData,
+  segment,
 }) {
-  //console.log(url);
-
   const router = useRouter();
+
+  const { cards, acceptedCards } = getSegmentData(segment);
+
+  console.log(cards, acceptedCards);
+  const info = [
+    {
+      title: "Generated Ideas",
+      icon: <TipsAndUpdatesIcon />,
+      count: cards.length || 0,
+    },
+    {
+      title: "Accepted Ideas",
+      icon: <BookmarksIcon />,
+      count: acceptedCards.length || 0,
+    },
+  ];
   return (
     <Link href={`/segments/${url}`} style={{ textDecoration: "none" }}>
       <Fade in timeout={300 + index * 100}>
@@ -135,6 +155,14 @@ export default function CanvasItem({
                 {description}
               </Typography>
             )}
+
+            <Box sx={{ mt: 3, display: "flex", gap: 1 }}>
+              {info.map((i, idx) => (
+                <Box key={idx} sx={{ display: "inline-block", mr: 1 }}>
+                  <CounterBadge index={idx} count={i.count} icon={i.icon} />
+                </Box>
+              ))}
+            </Box>
           </CardContent>
         </Card>
       </Fade>

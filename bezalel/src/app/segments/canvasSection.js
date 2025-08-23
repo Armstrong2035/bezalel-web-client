@@ -13,6 +13,7 @@ import {
 export const canvasSections = [
   {
     title: "Customer Segments",
+    key: "customerSegments",
     order: 1,
     url: "customer-segments",
     icon: Groups,
@@ -20,6 +21,7 @@ export const canvasSections = [
   },
   {
     title: "Value Propositions",
+    key: "valueProposition",
     order: 2,
     url: "value-propositions",
     icon: Star,
@@ -27,6 +29,7 @@ export const canvasSections = [
   },
   {
     title: "Channels",
+    key: "channels",
     order: 3,
     url: "channels",
     icon: Storefront,
@@ -34,6 +37,7 @@ export const canvasSections = [
   },
   {
     title: "Customer Relationships",
+    key: "customerRelationships",
     order: 4,
     url: "customer-relationships",
     icon: People,
@@ -41,6 +45,7 @@ export const canvasSections = [
   },
   {
     title: "Revenue Streams",
+    key: "revenueStreams",
     order: 5,
     url: "revenue-streams",
     icon: TrendingUp,
@@ -48,6 +53,7 @@ export const canvasSections = [
   },
   {
     title: "Key Resources",
+    key: "keyResources",
     order: 6,
     url: "key-resources",
     icon: Inventory,
@@ -55,6 +61,7 @@ export const canvasSections = [
   },
   {
     title: "Key Activities",
+    key: "keyActivities",
     order: 7,
     url: "key-activities",
     icon: Build,
@@ -62,6 +69,7 @@ export const canvasSections = [
   },
   {
     title: "Key Partners",
+    key: "keyPartners",
     order: 8,
     url: "key-partners",
     icon: BusinessCenter,
@@ -69,6 +77,7 @@ export const canvasSections = [
   },
   {
     title: "Cost Structure",
+    key: "costStructure",
     order: 9,
     url: "cost-structure",
     icon: AccountBalance,
