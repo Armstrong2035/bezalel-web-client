@@ -10,6 +10,7 @@ import {
   IconButton,
   Chip,
   Typography,
+  Button,
   Box,
 } from "@mui/material";
 import { ArrowForward } from "@mui/icons-material";
@@ -33,7 +34,7 @@ export default function CanvasItem({
 
   const { cards, acceptedCards } = getSegmentData(segment);
 
-  console.log(cards, acceptedCards);
+  //console.log(cards, acceptedCards);
   const info = [
     {
       title: "Generated Ideas",
@@ -163,6 +164,10 @@ export default function CanvasItem({
                 </Box>
               ))}
             </Box>
+
+            <Typography sx={{ mt: 2, color: "whitesmoke" }}>
+              Click to edit this segment
+            </Typography>
           </CardContent>
         </Card>
       </Fade>

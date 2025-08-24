@@ -6,6 +6,7 @@ import { useOnboardingStore } from "@/stores/onboardingStore";
 import convertOnboardingData from "../../onboarding/helpers/covertOnboardingData";
 import { useAuth } from "@/app/hooks/useAuth";
 import LoadingPage from "../../loading/LoadingPage";
+import GetStartedCard from "./GetStartedCard";
 
 // This component displays generated business ideas and handles user actions
 export default function GeneratedIdeas({ cards, segment }) {
@@ -19,8 +20,6 @@ export default function GeneratedIdeas({ cards, segment }) {
   const { user, loading: authLoading } = useAuth();
   const uid = user ? user.uid : null;
 
-  // Handles when a user accepts or rejects an idea.
-  // This will also show a loading state while the action is processed.
   const handleAccepted = async (ideaId, accepted) => {
     if (!uid) {
       console.error("User not authenticated. Cannot update idea status.");
@@ -57,7 +56,6 @@ export default function GeneratedIdeas({ cards, segment }) {
     }
   };
 
-  // Handles the generation of new business ideas
   const generateIdeas = async () => {
     if (!uid) {
       setError("Please log in to generate ideas");
@@ -103,7 +101,9 @@ export default function GeneratedIdeas({ cards, segment }) {
     }
   };
 
-  // Conditionally render the loading page when auth is loading
+  const clickCard = () => {
+    return <GetStartedCard segment={segment} functionHandler={generateIdeas} />;
+  };
   if (authLoading) {
     return <LoadingPage segment={segment} />;
   }
@@ -111,30 +111,29 @@ export default function GeneratedIdeas({ cards, segment }) {
   return (
     <Box sx={{ position: "relative" }}>
       <Grid container justifyContent={"center"} spacing={4}>
-        {cards.map((card, index) => (
-          <Grid item key={index} size={{ md: 4, sm: 6, xs: 12 }}>
-            <IdeaCard
-              control={"vote"}
-              card={card}
-              actionHandler={handleAccepted}
-            />
+        {cards.length === 0 ? (
+          <Grid
+            size={{ xs: 12 }}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <GetStartedCard segment={segment} functionHandler={generateIdeas} />
           </Grid>
-        ))}
+        ) : (
+          cards.map((card, index) => (
+            <Grid item key={index} size={{ md: 4, sm: 6, xs: 12 }}>
+              <IdeaCard
+                control={"vote"}
+                card={card}
+                actionHandler={handleAccepted}
+              />
+            </Grid>
+          ))
+        )}
       </Grid>
-
-      <Box
-        onClick={generateIdeas} // Simplified onClick handler
-        sx={{
-          position: "fixed",
-          bottom: 16,
-          right: 16,
-          zIndex: 10,
-        }}
-      >
-        <Fab color="primary" aria-label="add">
-          <ShuffleIcon />
-        </Fab>
-      </Box>
 
       {/* Overlay LoadingPage when isLoading is true */}
       {isLoading && (
