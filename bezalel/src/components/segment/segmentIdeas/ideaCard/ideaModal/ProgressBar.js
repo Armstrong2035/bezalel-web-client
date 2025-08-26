@@ -9,25 +9,40 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Stack,
 } from "@mui/material";
+import HelpToolTip from "@/components/ui/HelpToolTip";
 
 export default function ProgressBar({
   label,
   score,
   maxScore = 10,
-  description,
+  reasoning,
+  explanation,
 }) {
   const progress = (score / maxScore) * 100;
 
+  //  console.log(description);
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      <Typography
-        variant="subtitle1"
-        component="h3"
-        sx={{ fontWeight: "semibold", color: "whitesmoke" }}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          alignContent: "center",
+        }}
       >
-        {label}
-      </Typography>
+        <Typography
+          variant="subtitle1"
+          component="h3"
+          sx={{ fontWeight: "semibold", color: "whitesmoke" }}
+        >
+          {label}
+        </Typography>
+
+        <HelpToolTip explanation={explanation} />
+      </Box>
       <Typography
         variant="h4"
         component="p"
@@ -48,7 +63,7 @@ export default function ProgressBar({
         }}
       />
       <Typography variant="caption" sx={{ color: "whitesmoke", mt: 1 }}>
-        {description}
+        {reasoning}
       </Typography>
     </Box>
   );
