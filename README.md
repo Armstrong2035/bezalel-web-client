@@ -49,6 +49,3 @@ This project is a modular Next.js web client for Armstrong/Bezalel, structured f
 - Zustand is used for local state (onboarding progress, segment ideas, etc.).
 - API calls update Firestore and synchronize state.
 
----
-
-Feel free to expand this section as your project
