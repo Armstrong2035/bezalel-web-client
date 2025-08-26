@@ -8,7 +8,6 @@ import { useAuth } from "@/app/hooks/useAuth";
 import LoadingPage from "../../loading/LoadingPage";
 import GetStartedCard from "./GetStartedCard";
 
-// This component displays generated business ideas and handles user actions
 export default function GeneratedIdeas({ cards, segment }) {
   // Consolidate all loading states into a single variable for clarity
   const [isLoading, setIsLoading] = useState(false);
