@@ -8,9 +8,10 @@
  *   - Top-voted idea body text (or an empty state prompt)
  *   - Clicking the body area opens the right panel
  */
-export default function DocumentSection({ section, topIdea, onOpenPanel, isActive }) {
+export default function DocumentSection({ section, topIdea, nowIdeas = [], onOpenPanel, isActive }) {
   const Icon = section.icon;
   const hasIdea = !!topIdea;
+  const displayedIdeas = nowIdeas.length > 0 ? nowIdeas : topIdea ? [topIdea] : [];
 
   return (
     <section
@@ -104,29 +105,21 @@ export default function DocumentSection({ section, topIdea, onOpenPanel, isActiv
       >
         {hasIdea ? (
           <div>
-            {/* Idea title */}
-            <p
-              style={{
-                margin: "0 0 6px",
-                fontSize: 15,
-                fontWeight: 600,
-                color: "#1a1a1a",
-                lineHeight: 1.4,
-              }}
-            >
-              {topIdea.title}
-            </p>
-            {/* Idea description */}
-            <p
-              style={{
-                margin: 0,
-                fontSize: 14,
-                color: "#555",
-                lineHeight: 1.6,
-              }}
-            >
-              {topIdea.description}
-            </p>
+            {nowIdeas.length > 0 && (
+              <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, color: "#287c2f", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Now — in priority order
+              </p>
+            )}
+            {displayedIdeas.map((idea, index) => (
+              <div key={idea.id} style={{ marginBottom: index < displayedIdeas.length - 1 ? 12 : 0 }}>
+                <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 600, color: "#1a1a1a", lineHeight: 1.4 }}>
+                  {nowIdeas.length > 0 ? `${index + 1}. ` : ""}{idea.title}
+                </p>
+                <p style={{ margin: 0, fontSize: 14, color: "#555", lineHeight: 1.6 }}>
+                  {idea.description}
+                </p>
+              </div>
+            ))}
             <span
               style={{
                 display: "inline-block",

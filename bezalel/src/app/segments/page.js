@@ -25,6 +25,7 @@ import { useEffect, useState } from "react";
 import { subscribeToCanvasSegments } from "@/firebase/subscribeToCanvasSegment";
 import { useSegmentsStore } from "@/stores/segmentsStore";
 import { useAuth } from "../hooks/useAuth";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
 export default function Segments() {
   const theme = useTheme();
@@ -56,41 +57,43 @@ export default function Segments() {
   //console.log(user);
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        backgroundColor: "#000000",
-      }}
-    >
-      <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
-        <Box sx={{ pt: { xs: 3, sm: 4, md: 6 }, pb: { xs: 3, sm: 4 } }}>
-          <SegmentHeaders isMobile={isMobile} displayName={displayName} />
-          <Grid container spacing={3} sx={{ maxWidth: 1200, mx: "auto" }}>
-            {canvasSections.map((item) => (
-              <Grid
-                size={{ xs: 12, sm: 6, md: 4 }}
-                key={item.order}
-                sx={{
-                  display: "flex",
-                  "& > *": { width: "100%" },
-                }}
-              >
-                <CanvasItem
-                  title={item.title}
-                  index={item.order}
-                  url={item.url}
-                  icon={item.icon}
-                  description={item.description}
-                  isCore={item.isCore}
-                  isMobile={isMobile}
-                  getSegmentData={segmentData}
-                  segment={item.key}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-      </Container>
-    </Box>
+    <DashboardLayout>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          backgroundColor: "#000000",
+        }}
+      >
+        <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
+          <Box sx={{ pt: { xs: 3, sm: 4, md: 6 }, pb: { xs: 3, sm: 4 } }}>
+            {/* <SegmentHeaders isMobile={isMobile} displayName={displayName} /> */}
+            <Grid container spacing={3} sx={{ maxWidth: 1200, mx: "auto" }}>
+              {canvasSections.map((item) => (
+                <Grid
+                  size={{ xs: 12, sm: 6, md: 4 }}
+                  key={item.order}
+                  sx={{
+                    display: "flex",
+                    "& > *": { width: "100%" },
+                  }}
+                >
+                  <CanvasItem
+                    title={item.title}
+                    index={item.order}
+                    url={item.url}
+                    icon={item.icon}
+                    description={item.description}
+                    isCore={item.isCore}
+                    isMobile={isMobile}
+                    getSegmentData={segmentData}
+                    segment={item.key}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        </Container>
+      </Box>
+    </DashboardLayout>
   );
 }

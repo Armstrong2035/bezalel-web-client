@@ -22,8 +22,12 @@ export default function DocumentPage({ params }) {
   const setSegments = useSegmentsStore((state) => state.setSegments);
   const documents = useDocumentStore((state) => state.documents);
   const setDocuments = useDocumentStore((state) => state.setDocuments);
-  const setActiveDocumentId = useDocumentStore((state) => state.setActiveDocumentId);
-  const setDocumentContext = useDocumentStore((state) => state.setDocumentContext);
+  const setActiveDocumentId = useDocumentStore(
+    (state) => state.setActiveDocumentId,
+  );
+  const setDocumentContext = useDocumentStore(
+    (state) => state.setDocumentContext,
+  );
 
   // Which section panel is open — also accepts the special keys "context" and "chat"
   const [openPanelKey, setOpenPanelKey] = useState(null);
@@ -37,7 +41,7 @@ export default function DocumentPage({ params }) {
   // ── derived ──────────────────────────────────────────────────────
   const activeDoc = documents.find((d) => d.id === docId);
   const docContext = activeDoc?.context ?? null;
-  const hasContext = !!(docContext?.idea?.trim());
+  const hasContext = !!docContext?.idea?.trim();
 
   // ── auth guard ───────────────────────────────────────────────────
   useEffect(() => {
@@ -85,13 +89,28 @@ export default function DocumentPage({ params }) {
     if (!segments || typeof segments !== "object") return [];
     return Object.values(segments)
       .filter((item) => item.segment === segmentKey)
-      .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+      .sort(
+        (a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0),
+      );
   };
 
   const getTopIdea = (segmentKey) => {
     const ideas = getIdeasForSection(segmentKey);
-    return ideas.find((i) => i.accepted) ?? ideas[0] ?? null;
+    const nowIdeas = getNowIdeas(segmentKey);
+    return nowIdeas[0] ?? ideas.find((i) => i.accepted) ?? ideas[0] ?? null;
   };
+
+  const getDecisionStatus = (idea) =>
+    idea.decisionStatus ?? (idea.accepted ? "now" : "explore");
+
+  const getNowIdeas = (segmentKey) =>
+    getIdeasForSection(segmentKey)
+      .filter((idea) => getDecisionStatus(idea) === "now")
+      .sort(
+        (a, b) =>
+          (a.priority ?? Number.MAX_SAFE_INTEGER) -
+          (b.priority ?? Number.MAX_SAFE_INTEGER),
+      );
 
   // ── panel interactions ───────────────────────────────────────────
 
@@ -160,21 +179,75 @@ export default function DocumentPage({ params }) {
 
   const handleDeleteIdea = async (ideaId) => {
     if (!user?.uid) return;
-    await fetch("/api/update-option", {
+    const response = await fetch("/api/update-option", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.uid, documentId: docId, ideaId }),
     });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "The idea could not be deleted.");
+    }
+
     // Firestore subscription removes it from segments automatically
   };
 
-  const handleAcceptIdea = async (ideaId, accepted) => {
+  const handleDecisionChange = async (ideaId, decisionStatus) => {
     if (!user?.uid) return;
+    const idea = Object.values(segments ?? {}).find(
+      (item) => item.id === ideaId,
+    );
+    const sectionIdeas = idea ? getNowIdeas(idea.segment) : [];
+    const priority = decisionStatus === "now" ? sectionIdeas.length + 1 : null;
+
     await fetch("/api/update-option", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.uid, documentId: docId, ideaId, accepted }),
+      body: JSON.stringify({
+        userId: user.uid,
+        documentId: docId,
+        ideaId,
+        decisionStatus,
+        priority,
+      }),
     });
+  };
+
+  const handleMovePriority = async (sectionKey, ideaId, direction) => {
+    if (!user?.uid) return;
+    const nowIdeas = getNowIdeas(sectionKey);
+    const currentIndex = nowIdeas.findIndex((idea) => idea.id === ideaId);
+    const nextIndex = currentIndex + direction;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= nowIdeas.length)
+      return;
+
+    const current = nowIdeas[currentIndex];
+    const adjacent = nowIdeas[nextIndex];
+    await Promise.all([
+      fetch("/api/update-option", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.uid,
+          documentId: docId,
+          ideaId: current.id,
+          decisionStatus: "now",
+          priority: nextIndex + 1,
+        }),
+      }),
+      fetch("/api/update-option", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.uid,
+          documentId: docId,
+          ideaId: adjacent.id,
+          decisionStatus: "now",
+          priority: currentIndex + 1,
+        }),
+      }),
+    ]);
   };
 
   const handleRegenerate = async (sectionKey) => {
@@ -301,9 +374,7 @@ export default function DocumentPage({ params }) {
                 gap: 12,
               }}
             >
-              <p
-                style={{ margin: 0, fontSize: 13, color: "#92400e" }}
-              >
+              <p style={{ margin: 0, fontSize: 13, color: "#92400e" }}>
                 ⚠️ <strong>No context set.</strong> Add your business idea to
                 enable AI generation.
               </p>
@@ -333,6 +404,7 @@ export default function DocumentPage({ params }) {
               key={section.key}
               section={section}
               topIdea={getTopIdea(section.key)}
+              nowIdeas={getNowIdeas(section.key)}
               isActive={openPanelKey === section.key}
               onOpenPanel={handleOpenPanel}
             />
@@ -341,19 +413,24 @@ export default function DocumentPage({ params }) {
       </main>
 
       {/* Section options panel */}
-      {openPanelKey && openPanelKey !== "context" && openPanelKey !== "chat" && (
-        <SectionOptionsPanel
-          sectionKey={openPanelKey}
-          ideas={getIdeasForSection(openPanelKey)}
-          onClose={handleClosePanel}
-          onAccept={handleAcceptIdea}
-          onDelete={handleDeleteIdea}
-          onResearch={handleResearchIdea}
-          onRegenerate={() => handleRegenerate(openPanelKey)}
-          isRegenerating={regeneratingSectionKey === openPanelKey}
-          onOpenChat={(prefill) => handleOpenChat(prefill)}
-        />
-      )}
+      {openPanelKey &&
+        openPanelKey !== "context" &&
+        openPanelKey !== "chat" && (
+          <SectionOptionsPanel
+            sectionKey={openPanelKey}
+            ideas={getIdeasForSection(openPanelKey)}
+            onClose={handleClosePanel}
+            onDecisionChange={handleDecisionChange}
+            onMovePriority={(ideaId, direction) =>
+              handleMovePriority(openPanelKey, ideaId, direction)
+            }
+            onDelete={handleDeleteIdea}
+            onResearch={handleResearchIdea}
+            onRegenerate={() => handleRegenerate(openPanelKey)}
+            isRegenerating={regeneratingSectionKey === openPanelKey}
+            onOpenChat={(prefill) => handleOpenChat(prefill)}
+          />
+        )}
 
       {/* Context panel */}
       {openPanelKey === "context" && (

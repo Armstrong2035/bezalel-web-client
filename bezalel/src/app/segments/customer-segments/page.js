@@ -6,6 +6,7 @@ import { Alex_Brush } from "next/font/google";
 import { useEffect } from "react";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import { getSegmentIdeas } from "../../../helperFunctions/getSegment";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
 export default function ValuePropositions() {
   const segments = useSegmentsStore((state) => state.segments);
@@ -13,8 +14,10 @@ export default function ValuePropositions() {
   const customerSegments = getSegmentIdeas(segment, segments);
 
   return (
-    <Box>
-      <Segment segment={segment} segmentData={customerSegments} />
-    </Box>
+    <DashboardLayout>
+      <Box>
+        <Segment segment={segment} segmentData={customerSegments} />
+      </Box>
+    </DashboardLayout>
   );
 }

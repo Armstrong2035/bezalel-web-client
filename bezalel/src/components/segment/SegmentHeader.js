@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material";
 
-export default function SegmentHeaders({ isMobile, displayName }) {
+export default function Header({ isMobile, displayName }) {
   const firstName = displayName?.split(" ")[0] || "there";
   return (
     <Box sx={{ textAlign: "center", mb: { xs: 3, sm: 4, md: 5 } }}>

@@ -1,30 +1,56 @@
-import { updateIdeaInDocument } from "@/app/lib/services/documentService";
+import {
+  deleteIdeaFromDocument,
+  updateIdeaDecision,
+  updateIdeaInDocument,
+} from "@/app/lib/services/documentService";
 import { NextResponse } from "next/server";
 
 /**
  * PATCH /api/update-option
- * Body: { userId, documentId, ideaId, accepted }
- * Toggles the accepted status of an idea within a document.
+ * Body: { userId, documentId, ideaId, decisionStatus, priority? }
+ * Saves an idea's decision state and, for "now" ideas, its execution priority.
  */
 export async function PATCH(request) {
   try {
-    const { userId, documentId, ideaId, accepted } = await request.json();
+    const { userId, documentId, ideaId, accepted, decisionStatus, priority } =
+      await request.json();
 
     if (!userId || !documentId || !ideaId) {
       return NextResponse.json(
         { error: "userId, documentId, and ideaId are required." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    if (typeof accepted !== "boolean") {
+    const validStatuses = ["now", "later", "explore", "notPursuing"];
+    if (decisionStatus && !validStatuses.includes(decisionStatus)) {
       return NextResponse.json(
-        { error: "accepted must be a boolean value (true or false)." },
-        { status: 400 }
+        {
+          error: "decisionStatus must be now, later, explore, or notPursuing.",
+        },
+        { status: 400 },
       );
     }
 
-    const result = await updateIdeaInDocument(userId, documentId, ideaId, accepted);
+    // Retain support for older clients while cards migrate to decision states.
+    const result = decisionStatus
+      ? await updateIdeaDecision(
+          userId,
+          documentId,
+          ideaId,
+          decisionStatus,
+          priority,
+        )
+      : typeof accepted === "boolean"
+        ? await updateIdeaInDocument(userId, documentId, ideaId, accepted)
+        : null;
+
+    if (!result) {
+      return NextResponse.json(
+        { error: "decisionStatus or accepted must be provided." },
+        { status: 400 },
+      );
+    }
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     console.error("PATCH /api/update-option error:", error);
@@ -44,11 +70,10 @@ export async function DELETE(request) {
     if (!userId || !documentId || !ideaId) {
       return NextResponse.json(
         { error: "userId, documentId, and ideaId are required." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const { deleteIdeaFromDocument } = await import("@/app/lib/services/documentService");
     const result = await deleteIdeaFromDocument(userId, documentId, ideaId);
     return NextResponse.json(result, { status: 200 });
   } catch (error) {

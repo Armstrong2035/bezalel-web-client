@@ -1,6 +1,6 @@
 import { createPrompt } from "@/app/lib/engines/canvasEngine/canvasSchema";
 import { generateCanvasSegment } from "@/app/lib/services/llmService";
-import { saveIdeaToDocument } from "@/app/lib/services/documentService";
+import { getDocumentCanvasIdeas, saveIdeaToDocument } from "@/app/lib/services/documentService";
 
 export async function POST(request) {
   try {
@@ -19,8 +19,10 @@ export async function POST(request) {
       return Response.json({ error: "segment is required" }, { status: 400 });
     }
 
-    // Build prompt from context + segment
-    const prompt = await createPrompt(context, segment, userId);
+    // Load accepted decisions from this document so each canvas section builds
+    // on the founder's selections instead of inventing a parallel canvas.
+    const canvasIdeas = await getDocumentCanvasIdeas(userId, documentId);
+    const prompt = await createPrompt(context, segment, userId, canvasIdeas);
 
     const llmResponse = await generateCanvasSegment(prompt);
 

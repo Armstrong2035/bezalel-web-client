@@ -4,11 +4,21 @@ import { useState } from "react";
 import { canvasSections } from "@/app/segments/canvasSection";
 import ThinkingBlock from "./ThinkingBlock";
 
+const decisionOptions = [
+  { value: "now", label: "Now" },
+  { value: "later", label: "Later" },
+  { value: "explore", label: "Explore" },
+  { value: "notPursuing", label: "Not pursuing" },
+];
+
+const getDecisionStatus = (idea) =>
+  idea.decisionStatus ?? (idea.accepted ? "now" : "explore");
+
 /**
  * SectionOptionsPanel
  * Right-side sliding panel that appears when a section is clicked.
  * Shows all AI-generated ideas for that section with:
- *   - Select (accept) / deselect per idea
+ *   - Decision state and priority per idea
  *   - Scores (easeOfExecution, resourceAlignment, marketFit)
  *   - Regenerate button
  *   - Close button
@@ -18,7 +28,8 @@ export default function SectionOptionsPanel({
   sectionKey,
   ideas = [],
   onClose,
-  onAccept,
+  onDecisionChange,
+  onMovePriority,
   onDelete,
   onResearch,
   onRegenerate,
@@ -31,6 +42,18 @@ export default function SectionOptionsPanel({
   if (!section) return null;
 
   const Icon = section.icon;
+  const orderedIdeas = [...ideas].sort((a, b) => {
+    const aNow = getDecisionStatus(a) === "now";
+    const bNow = getDecisionStatus(b) === "now";
+    if (aNow !== bNow) return aNow ? -1 : 1;
+    return (
+      (a.priority ?? Number.MAX_SAFE_INTEGER) -
+      (b.priority ?? Number.MAX_SAFE_INTEGER)
+    );
+  });
+  const nowIdeas = orderedIdeas.filter(
+    (idea) => getDecisionStatus(idea) === "now",
+  );
 
   return (
     <>
@@ -124,8 +147,12 @@ export default function SectionOptionsPanel({
                   cursor: "pointer",
                   transition: "background 0.15s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#e4e4e2")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "#f0f0f0")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "#e4e4e2")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "#f0f0f0")
+                }
               >
                 💬 Ask
               </button>
@@ -161,7 +188,9 @@ export default function SectionOptionsPanel({
               <span
                 style={{
                   display: "inline-block",
-                  animation: isRegenerating ? "spin 1s linear infinite" : "none",
+                  animation: isRegenerating
+                    ? "spin 1s linear infinite"
+                    : "none",
                 }}
               >
                 ↺
@@ -185,9 +214,7 @@ export default function SectionOptionsPanel({
               onMouseEnter={(e) =>
                 (e.currentTarget.style.background = "#f0f0f0")
               }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "none")
-              }
+              onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
             >
               ✕
             </button>
@@ -202,12 +229,25 @@ export default function SectionOptionsPanel({
             padding: "16px 24px 24px",
           }}
         >
+          {ideas.length > 0 && (
+            <p
+              style={{
+                margin: "0 0 12px",
+                fontSize: 12,
+                color: "#888",
+                lineHeight: 1.5,
+              }}
+            >
+              Mark every required choice <strong>Now</strong>, then use the
+              arrows to set its execution priority.
+            </p>
+          )}
           {ideas.length === 0 && !isRegenerating ? (
             <EmptyState section={section} onGenerate={onRegenerate} />
           ) : isRegenerating && ideas.length === 0 ? (
             <LoadingIdeas />
           ) : (
-            ideas.map((idea) => (
+            orderedIdeas.map((idea) => (
               <IdeaCard
                 key={idea.id}
                 idea={idea}
@@ -215,7 +255,13 @@ export default function SectionOptionsPanel({
                 onToggleExpand={() =>
                   setExpandedId(expandedId === idea.id ? null : idea.id)
                 }
-                onAccept={() => onAccept(idea.id, !idea.accepted)}
+                decisionStatus={getDecisionStatus(idea)}
+                priorityIndex={nowIdeas.findIndex(
+                  (nowIdea) => nowIdea.id === idea.id,
+                )}
+                nowCount={nowIdeas.length}
+                onDecisionChange={(status) => onDecisionChange(idea.id, status)}
+                onMovePriority={onMovePriority}
                 onDelete={() => onDelete(idea.id)}
                 onResearch={onResearch}
               />
@@ -243,8 +289,20 @@ export default function SectionOptionsPanel({
 /* Sub-components                                                        */
 /* ------------------------------------------------------------------ */
 
-function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onResearch }) {
+function IdeaCard({
+  idea,
+  isExpanded,
+  onToggleExpand,
+  decisionStatus,
+  priorityIndex,
+  nowCount,
+  onDecisionChange,
+  onMovePriority,
+  onDelete,
+  onResearch,
+}) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
   const [activeTab, setActiveTab] = useState("plan"); // "plan" | "assumptions" | "research"
   const [isResearching, setIsResearching] = useState(false);
   const [researchError, setResearchError] = useState(null);
@@ -255,7 +313,10 @@ function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onRese
     setResearchError(null);
     setResearchReasoningSteps(null);
     try {
-      const result = await onResearch(idea.id, { title: idea.title, description: idea.description });
+      const result = await onResearch(idea.id, {
+        title: idea.title,
+        description: idea.description,
+      });
       if (result?.reasoningSteps) {
         setResearchReasoningSteps(result.reasoningSteps);
       }
@@ -266,10 +327,23 @@ function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onRese
     }
   };
 
+  const handleDelete = async () => {
+    setDeleteError(null);
+    try {
+      await onDelete();
+    } catch (err) {
+      setDeleteError(err.message ?? "The idea could not be deleted.");
+    }
+  };
+
   // Format a Firestore-style timestamp or ISO string
   const formatTimestamp = (ts) => {
     if (!ts) return null;
-    const ms = ts.seconds ? ts.seconds * 1000 : typeof ts === "number" ? ts : Date.parse(ts);
+    const ms = ts.seconds
+      ? ts.seconds * 1000
+      : typeof ts === "number"
+        ? ts
+        : Date.parse(ts);
     if (isNaN(ms)) return null;
     const diff = Date.now() - ms;
     if (diff < 60000) return "just now";
@@ -282,10 +356,10 @@ function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onRese
     <div
       style={{
         marginBottom: 12,
-        border: `1px solid ${idea.accepted ? "#a0c8a0" : "#e8e8e6"}`,
+        border: `1px solid ${decisionStatus === "now" ? "#a0c8a0" : "#e8e8e6"}`,
         borderRadius: 8,
         overflow: "hidden",
-        backgroundColor: idea.accepted ? "#f4fbf4" : "#ffffff",
+        backgroundColor: decisionStatus === "now" ? "#f4fbf4" : "#ffffff",
         transition: "border-color 0.2s, background 0.2s",
       }}
     >
@@ -327,33 +401,59 @@ function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onRese
           </p>
         </div>
 
-        {/* Accept toggle */}
-        <button
-          onClick={onAccept}
-          title={idea.accepted ? "Deselect" : "Select this idea"}
+        <select
+          value={decisionStatus}
+          onChange={(event) => onDecisionChange(event.target.value)}
+          title="Set decision status"
           style={{
+            flexShrink: 0,
+            padding: "5px 7px",
+            borderRadius: 5,
+            border: `1px solid ${decisionStatus === "now" ? "#4caf50" : "#ddd"}`,
+            background: decisionStatus === "now" ? "#f4fbf4" : "white",
+            cursor: "pointer",
+            fontSize: 12,
+            color: decisionStatus === "now" ? "#287c2f" : "#666",
+            fontWeight: 600,
+          }}
+        >
+          {decisionOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        {/* Legacy quick-toggle is retained for existing card markup but hidden in favor of decision states. */}
+        <button
+          onClick={() =>
+            onDecisionChange(decisionStatus === "now" ? "explore" : "now")
+          }
+          title={decisionStatus === "now" ? "Move to Explore" : "Move to Now"}
+          style={{
+            display: "none",
             flexShrink: 0,
             width: 28,
             height: 28,
             borderRadius: "50%",
-            border: `2px solid ${idea.accepted ? "#4caf50" : "#ddd"}`,
-            background: idea.accepted ? "#4caf50" : "transparent",
+            border: `2px solid ${decisionStatus === "now" ? "#4caf50" : "#ddd"}`,
+            background: decisionStatus === "now" ? "#4caf50" : "transparent",
             cursor: "pointer",
-            display: "flex",
+            display: "none",
             alignItems: "center",
             justifyContent: "center",
             fontSize: 14,
-            color: idea.accepted ? "white" : "#ccc",
+            color: decisionStatus === "now" ? "white" : "#ccc",
             transition: "all 0.15s",
           }}
           onMouseEnter={(e) => {
-            if (!idea.accepted) {
+            if (decisionStatus !== "now") {
               e.currentTarget.style.borderColor = "#4caf50";
               e.currentTarget.style.color = "#4caf50";
             }
           }}
           onMouseLeave={(e) => {
-            if (!idea.accepted) {
+            if (decisionStatus !== "now") {
               e.currentTarget.style.borderColor = "#ddd";
               e.currentTarget.style.color = "#ccc";
             }
@@ -366,7 +466,7 @@ function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onRese
         {confirmDelete ? (
           <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
             <button
-              onClick={onDelete}
+              onClick={handleDelete}
               title="Confirm delete"
               style={{
                 padding: "3px 8px",
@@ -430,6 +530,19 @@ function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onRese
         )}
       </div>
 
+      {deleteError && (
+        <p
+          role="alert"
+          style={{
+            margin: "-4px 16px 12px",
+            fontSize: 12,
+            color: "#b91c1c",
+          }}
+        >
+          {deleteError}
+        </p>
+      )}
+
       {/* Score chips + expand toggle */}
       <div
         style={{
@@ -443,9 +556,61 @@ function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onRese
       >
         {idea.scores && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <ScoreChip label="Ease" score={idea.scores.easeOfExecution?.score} />
-            <ScoreChip label="Resources" score={idea.scores.resourceAlignment?.score} />
+            <ScoreChip
+              label="Ease"
+              score={idea.scores.easeOfExecution?.score}
+            />
+            <ScoreChip
+              label="Resources"
+              score={idea.scores.resourceAlignment?.score}
+            />
             <ScoreChip label="Market" score={idea.scores.marketFit?.score} />
+          </div>
+        )}
+
+        {decisionStatus === "now" && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              fontSize: 12,
+              color: "#287c2f",
+              fontWeight: 600,
+            }}
+          >
+            Priority {priorityIndex + 1}
+            <button
+              onClick={() => onMovePriority(idea.id, -1)}
+              disabled={priorityIndex === 0}
+              title="Move up"
+              style={{
+                border: "1px solid #b8d9ba",
+                background: "white",
+                borderRadius: 4,
+                cursor: priorityIndex === 0 ? "not-allowed" : "pointer",
+                color: "#287c2f",
+                opacity: priorityIndex === 0 ? 0.35 : 1,
+              }}
+            >
+              ↑
+            </button>
+            <button
+              onClick={() => onMovePriority(idea.id, 1)}
+              disabled={priorityIndex === nowCount - 1}
+              title="Move down"
+              style={{
+                border: "1px solid #b8d9ba",
+                background: "white",
+                borderRadius: 4,
+                cursor:
+                  priorityIndex === nowCount - 1 ? "not-allowed" : "pointer",
+                color: "#287c2f",
+                opacity: priorityIndex === nowCount - 1 ? 0.35 : 1,
+              }}
+            >
+              ↓
+            </button>
           </div>
         )}
 
@@ -499,8 +664,8 @@ function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onRese
                         ? "#4caf50"
                         : "#4caf50aa"
                       : activeTab === tab.key
-                      ? "#1a1a1a"
-                      : "#aaa",
+                        ? "#1a1a1a"
+                        : "#aaa",
                   background: "none",
                   border: "none",
                   borderBottom: `2px solid ${
@@ -543,11 +708,17 @@ function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onRese
                         >
                           W{i + 1}
                         </span>
-                        <span style={{ fontSize: 13, color: "#444", lineHeight: 1.5 }}>
+                        <span
+                          style={{
+                            fontSize: 13,
+                            color: "#444",
+                            lineHeight: 1.5,
+                          }}
+                        >
                           {idea.actionPlan[week]}
                         </span>
                       </div>
-                    ) : null
+                    ) : null,
                   )
                 ) : (
                   <p style={{ fontSize: 13, color: "#aaa", margin: 0 }}>
@@ -571,10 +742,23 @@ function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onRese
                         border: "1px solid #f0f0ee",
                       }}
                     >
-                      <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 500, color: "#333" }}>
+                      <p
+                        style={{
+                          margin: "0 0 4px",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          color: "#333",
+                        }}
+                      >
                         {a.assumption}
                       </p>
-                      <p style={{ margin: "0 0 2px", fontSize: 12, color: "#777" }}>
+                      <p
+                        style={{
+                          margin: "0 0 2px",
+                          fontSize: 12,
+                          color: "#777",
+                        }}
+                      >
                         <strong>How:</strong> {a.validationMethod}
                       </p>
                       <p style={{ margin: 0, fontSize: 12, color: "#777" }}>
@@ -617,26 +801,75 @@ function IdeaCard({ idea, isExpanded, onToggleExpand, onAccept, onDelete, onRese
 
 function ResearchPanel({ research, isResearching, error, onRun, lastFetched }) {
   const verdictConfig = {
-    validates: { color: "#4caf50", bg: "#f4fbf4", border: "#a0c8a0", label: "✓ Validates idea" },
-    challenges: { color: "#ef4444", bg: "#fff5f5", border: "#fca5a5", label: "✗ Challenges idea" },
-    mixed:      { color: "#f59e0b", bg: "#fffbeb", border: "#fde68a", label: "~ Mixed signals"  },
+    validates: {
+      color: "#4caf50",
+      bg: "#f4fbf4",
+      border: "#a0c8a0",
+      label: "✓ Validates idea",
+    },
+    challenges: {
+      color: "#ef4444",
+      bg: "#fff5f5",
+      border: "#fca5a5",
+      label: "✗ Challenges idea",
+    },
+    mixed: {
+      color: "#f59e0b",
+      bg: "#fffbeb",
+      border: "#fde68a",
+      label: "~ Mixed signals",
+    },
   };
 
   if (isResearching) {
     return (
       <div style={{ textAlign: "center", padding: "32px 0" }}>
-        <div style={{ fontSize: 24, marginBottom: 12, animation: "spin 2s linear infinite", display: "inline-block" }}>🔍</div>
-        <p style={{ margin: 0, fontSize: 13, color: "#888", fontWeight: 500 }}>Researching the web…</p>
-        <p style={{ margin: "6px 0 0", fontSize: 12, color: "#bbb" }}>This usually takes 10–20 seconds</p>
+        <div
+          style={{
+            fontSize: 24,
+            marginBottom: 12,
+            animation: "spin 2s linear infinite",
+            display: "inline-block",
+          }}
+        >
+          🔍
+        </div>
+        <p style={{ margin: 0, fontSize: 13, color: "#888", fontWeight: 500 }}>
+          Researching the web…
+        </p>
+        <p style={{ margin: "6px 0 0", fontSize: 12, color: "#bbb" }}>
+          This usually takes 10–20 seconds
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: "12px 14px", background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 7 }}>
-        <p style={{ margin: "0 0 10px", fontSize: 13, color: "#b91c1c" }}>⚠ {error}</p>
-        <button onClick={onRun} style={{ fontSize: 12, fontWeight: 600, color: "white", background: "#1a1a1a", border: "none", borderRadius: 5, padding: "5px 12px", cursor: "pointer" }}>
+      <div
+        style={{
+          padding: "12px 14px",
+          background: "#fff5f5",
+          border: "1px solid #fca5a5",
+          borderRadius: 7,
+        }}
+      >
+        <p style={{ margin: "0 0 10px", fontSize: 13, color: "#b91c1c" }}>
+          ⚠ {error}
+        </p>
+        <button
+          onClick={onRun}
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: "white",
+            background: "#1a1a1a",
+            border: "none",
+            borderRadius: 5,
+            padding: "5px 12px",
+            cursor: "pointer",
+          }}
+        >
           Try again
         </button>
       </div>
@@ -647,13 +880,32 @@ function ResearchPanel({ research, isResearching, error, onRun, lastFetched }) {
     return (
       <div style={{ textAlign: "center", padding: "28px 0" }}>
         <p style={{ fontSize: 28, margin: "0 0 10px" }}>🌐</p>
-        <p style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 600, color: "#333" }}>No research yet</p>
+        <p
+          style={{
+            margin: "0 0 6px",
+            fontSize: 14,
+            fontWeight: 600,
+            color: "#333",
+          }}
+        >
+          No research yet
+        </p>
         <p style={{ margin: "0 0 18px", fontSize: 12, color: "#aaa" }}>
-          Search the web for competitors, market signals, and customer evidence for this idea.
+          Search the web for competitors, market signals, and customer evidence
+          for this idea.
         </p>
         <button
           onClick={onRun}
-          style={{ padding: "8px 18px", fontSize: 13, fontWeight: 600, color: "white", background: "#1a1a1a", border: "none", borderRadius: 6, cursor: "pointer" }}
+          style={{
+            padding: "8px 18px",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "white",
+            background: "#1a1a1a",
+            border: "none",
+            borderRadius: 6,
+            cursor: "pointer",
+          }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "#333")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "#1a1a1a")}
         >
@@ -668,15 +920,53 @@ function ResearchPanel({ research, isResearching, error, onRun, lastFetched }) {
   return (
     <div>
       {/* Verdict badge */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
-        <div style={{ padding: "8px 12px", background: vc.bg, border: `1px solid ${vc.border}`, borderRadius: 7, flex: 1 }}>
-          <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: vc.color }}>{vc.label}</p>
-          <p style={{ margin: 0, fontSize: 12, color: "#555", lineHeight: 1.5 }}>{research.verdictReasoning}</p>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <div
+          style={{
+            padding: "8px 12px",
+            background: vc.bg,
+            border: `1px solid ${vc.border}`,
+            borderRadius: 7,
+            flex: 1,
+          }}
+        >
+          <p
+            style={{
+              margin: "0 0 4px",
+              fontSize: 13,
+              fontWeight: 700,
+              color: vc.color,
+            }}
+          >
+            {vc.label}
+          </p>
+          <p
+            style={{ margin: 0, fontSize: 12, color: "#555", lineHeight: 1.5 }}
+          >
+            {research.verdictReasoning}
+          </p>
         </div>
         <button
           onClick={onRun}
           title="Refresh research"
-          style={{ flexShrink: 0, padding: "6px 10px", fontSize: 12, color: "#888", background: "#f5f5f5", border: "1px solid #e0e0de", borderRadius: 6, cursor: "pointer" }}
+          style={{
+            flexShrink: 0,
+            padding: "6px 10px",
+            fontSize: 12,
+            color: "#888",
+            background: "#f5f5f5",
+            border: "1px solid #e0e0de",
+            borderRadius: 6,
+            cursor: "pointer",
+          }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "#ebebeb")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "#f5f5f5")}
         >
@@ -685,24 +975,64 @@ function ResearchPanel({ research, isResearching, error, onRun, lastFetched }) {
       </div>
 
       {lastFetched && (
-        <p style={{ margin: "-8px 0 14px", fontSize: 11, color: "#bbb" }}>Last researched {lastFetched}</p>
+        <p style={{ margin: "-8px 0 14px", fontSize: 11, color: "#bbb" }}>
+          Last researched {lastFetched}
+        </p>
       )}
 
       {/* Competitors */}
       {research.competitors?.length > 0 && (
         <ResearchSection title="🏢 Competitors">
           {research.competitors.map((c, i) => (
-            <div key={i} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: i < research.competitors.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a" }}>{c.name}</span>
+            <div
+              key={i}
+              style={{
+                marginBottom: 8,
+                paddingBottom: 8,
+                borderBottom:
+                  i < research.competitors.length - 1
+                    ? "1px solid #f5f5f5"
+                    : "none",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginBottom: 2,
+                }}
+              >
+                <span
+                  style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a" }}
+                >
+                  {c.name}
+                </span>
                 {c.url && (
-                  <a href={c.url} target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: 11, color: "#4a90d9", textDecoration: "none" }}>
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: 11,
+                      color: "#4a90d9",
+                      textDecoration: "none",
+                    }}
+                  >
                     ↗ Visit
                   </a>
                 )}
               </div>
-              <p style={{ margin: 0, fontSize: 12, color: "#666", lineHeight: 1.5 }}>{c.summary}</p>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  color: "#666",
+                  lineHeight: 1.5,
+                }}
+              >
+                {c.summary}
+              </p>
             </div>
           ))}
         </ResearchSection>
@@ -713,12 +1043,26 @@ function ResearchPanel({ research, isResearching, error, onRun, lastFetched }) {
         <ResearchSection title="📈 Market Signals">
           {research.marketSignals.map((s, i) => (
             <div key={i} style={{ display: "flex", gap: 8, marginBottom: 7 }}>
-              <span style={{ flexShrink: 0, fontSize: 14, paddingTop: 1 }}>•</span>
+              <span style={{ flexShrink: 0, fontSize: 14, paddingTop: 1 }}>
+                •
+              </span>
               <div>
-                <span style={{ fontSize: 12, color: "#333", lineHeight: 1.5 }}>{s.insight}</span>
+                <span style={{ fontSize: 12, color: "#333", lineHeight: 1.5 }}>
+                  {s.insight}
+                </span>
                 {s.url && (
-                  <a href={s.url} target="_blank" rel="noopener noreferrer"
-                    style={{ display: "inline-block", marginLeft: 6, fontSize: 11, color: "#4a90d9", textDecoration: "none" }}>
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-block",
+                      marginLeft: 6,
+                      fontSize: 11,
+                      color: "#4a90d9",
+                      textDecoration: "none",
+                    }}
+                  >
                     [{s.source || "source"} ↗]
                   </a>
                 )}
@@ -732,19 +1076,64 @@ function ResearchPanel({ research, isResearching, error, onRun, lastFetched }) {
       {research.customerEvidence?.length > 0 && (
         <ResearchSection title="💬 Customer Evidence">
           {research.customerEvidence.map((e, i) => {
-            const sentimentColor = e.sentiment === "positive" ? "#4caf50" : e.sentiment === "negative" ? "#ef4444" : "#f59e0b";
+            const sentimentColor =
+              e.sentiment === "positive"
+                ? "#4caf50"
+                : e.sentiment === "negative"
+                  ? "#ef4444"
+                  : "#f59e0b";
             return (
-              <div key={i} style={{ marginBottom: 8, padding: "8px 10px", background: "#fafafa", borderRadius: 6, border: "1px solid #f0f0ee", borderLeft: `3px solid ${sentimentColor}` }}>
-                <p style={{ margin: "0 0 4px", fontSize: 12, color: "#444", lineHeight: 1.5, fontStyle: "italic" }}>"{e.quote}"</p>
+              <div
+                key={i}
+                style={{
+                  marginBottom: 8,
+                  padding: "8px 10px",
+                  background: "#fafafa",
+                  borderRadius: 6,
+                  border: "1px solid #f0f0ee",
+                  borderLeft: `3px solid ${sentimentColor}`,
+                }}
+              >
+                <p
+                  style={{
+                    margin: "0 0 4px",
+                    fontSize: 12,
+                    color: "#444",
+                    lineHeight: 1.5,
+                    fontStyle: "italic",
+                  }}
+                >
+                  &quot;{e.quote}&quot;
+                </p>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: sentimentColor, textTransform: "uppercase", letterSpacing: "0.05em" }}>{e.sentiment}</span>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: sentimentColor,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    {e.sentiment}
+                  </span>
                   {e.url ? (
-                    <a href={e.url} target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: 11, color: "#aaa", textDecoration: "none" }}>
+                    <a
+                      href={e.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: 11,
+                        color: "#aaa",
+                        textDecoration: "none",
+                      }}
+                    >
                       — {e.source || "source"} ↗
                     </a>
                   ) : (
-                    <span style={{ fontSize: 11, color: "#bbb" }}>— {e.source}</span>
+                    <span style={{ fontSize: 11, color: "#bbb" }}>
+                      — {e.source}
+                    </span>
                   )}
                 </div>
               </div>
@@ -759,7 +1148,16 @@ function ResearchPanel({ research, isResearching, error, onRun, lastFetched }) {
 function ResearchSection({ title, children }) {
   return (
     <div style={{ marginBottom: 16 }}>
-      <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.07em" }}>
+      <p
+        style={{
+          margin: "0 0 8px",
+          fontSize: 11,
+          fontWeight: 700,
+          color: "#888",
+          textTransform: "uppercase",
+          letterSpacing: "0.07em",
+        }}
+      >
         {title}
       </p>
       {children}
@@ -769,8 +1167,7 @@ function ResearchSection({ title, children }) {
 
 function ScoreChip({ label, score }) {
   if (score == null) return null;
-  const color =
-    score >= 7 ? "#4caf50" : score >= 4 ? "#ff9800" : "#f44336";
+  const color = score >= 7 ? "#4caf50" : score >= 4 ? "#ff9800" : "#f44336";
   return (
     <span
       style={{

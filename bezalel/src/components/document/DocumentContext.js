@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useDocumentStore } from "@/stores/documentStore";
 import onboardingQuestions from "@/components/onboarding/helpers/onboardingData";
@@ -44,18 +44,20 @@ export default function DocumentContext({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
+  const hasEditedRef = useRef(false);
 
   const hasRequiredField = !!draft.idea?.trim();
 
   const handleChange = (id, value) => {
+    hasEditedRef.current = true;
     setDraft((prev) => ({ ...prev, [id]: value }));
     setSaved(false);
     setError(null);
   };
 
-  const handleSave = async () => {
+  const saveContext = useCallback(async (context, { closeAfterSave = false } = {}) => {
     if (!user?.uid || !docId) return;
-    if (!draft.idea?.trim()) {
+    if (!context.idea?.trim()) {
       setError("Please describe your business idea before saving.");
       return;
     }
@@ -67,7 +69,7 @@ export default function DocumentContext({
       const res = await fetch(`/api/documents/${docId}/context`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.uid, context: draft }),
+        body: JSON.stringify({ userId: user.uid, context }),
       });
 
       if (!res.ok) {
@@ -75,13 +77,11 @@ export default function DocumentContext({
         throw new Error(body.error ?? "Failed to save context");
       }
 
-      // Optimistic update in store
-      setDocumentContext(docId, draft);
+      setDocumentContext(docId, context);
       setSaved(true);
-      onSaved?.(draft);
+      onSaved?.(context);
 
-      // Auto-close after a beat if not required (already had context)
-      if (!isRequired) {
+      if (closeAfterSave && !isRequired) {
         setTimeout(() => onClose(), 800);
       }
     } catch (err) {
@@ -89,7 +89,21 @@ export default function DocumentContext({
     } finally {
       setSaving(false);
     }
-  };
+  }, [docId, isRequired, onClose, onSaved, setDocumentContext, user?.uid]);
+
+  // Persist edits shortly after the user stops typing or selecting options.
+  // The initial document load is intentionally excluded: only user edits save.
+  useEffect(() => {
+    if (!hasEditedRef.current || !draft.idea?.trim()) return;
+
+    const timer = setTimeout(() => {
+      saveContext(draft);
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [draft, saveContext]);
+
+  const handleSave = () => saveContext(draft, { closeAfterSave: true });
 
   return (
     <>
@@ -403,6 +417,15 @@ export default function DocumentContext({
               }}
             >
               {error}
+            </p>
+          )}
+          {!error && (
+            <p style={{ margin: 0, fontSize: 12, color: saved ? "#4caf50" : "#999", flex: 1 }}>
+              {saving
+                ? "Saving changes…"
+                : saved
+                ? "Changes saved"
+                : "Changes autosave after you stop typing"}
             </p>
           )}
         </div>

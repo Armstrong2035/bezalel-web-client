@@ -179,6 +179,30 @@ export const saveIdeaToDocument = async (userId, documentId, ideaData) => {
 };
 
 /**
+ * Loads all canvas ideas for one document. Generation uses these to keep new
+ * suggestions aligned with decisions the founder has already accepted.
+ *
+ * @param {string} userId
+ * @param {string} documentId
+ * @returns {Array<object>}
+ */
+export const getDocumentCanvasIdeas = async (userId, documentId) => {
+  if (!userId || !documentId) {
+    throw new Error("userId and documentId are required");
+  }
+
+  const snapshot = await db
+    .collection("users")
+    .doc(userId)
+    .collection("documents")
+    .doc(documentId)
+    .collection("canvasSegments")
+    .get();
+
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+};
+
+/**
  * Updates the accepted status of an idea within a specific document.
  *
  * @param {string} userId
@@ -201,6 +225,39 @@ export const updateIdeaInDocument = async (userId, documentId, ideaId, accepted)
 
   await ref.update({
     accepted,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return { success: true };
+};
+
+/**
+ * Records how a founder intends to use an idea. `accepted` remains in sync for
+ * backward compatibility: a "now" decision is an active canvas choice.
+ */
+export const updateIdeaDecision = async (
+  userId,
+  documentId,
+  ideaId,
+  decisionStatus,
+  priority = null
+) => {
+  if (!userId || !documentId || !ideaId) {
+    throw new Error("userId, documentId, and ideaId are required");
+  }
+
+  const ref = db
+    .collection("users")
+    .doc(userId)
+    .collection("documents")
+    .doc(documentId)
+    .collection("canvasSegments")
+    .doc(ideaId);
+
+  await ref.update({
+    decisionStatus,
+    priority: decisionStatus === "now" ? priority : null,
+    accepted: decisionStatus === "now",
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
