@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 
 const MODELS = {
-  flash: "gemini-2.5-flash-lite",
-  pro: "gemini-2.5-pro-preview-05-20",
+  flash: "gemini-3.5-flash",
+  pro: "gemini-3.1-pro-preview",
 };
 
 const API_KEY = process.env.GEMINI_API_KEY;

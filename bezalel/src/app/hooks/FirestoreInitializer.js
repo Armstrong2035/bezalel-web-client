@@ -1,41 +1,54 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSegmentsStore } from "@/stores/segmentsStore";
-import { useAuth } from "./useAuth";
-import { subscribeToCanvasSegments } from "@/firebase/subscribeToCanvasSegment";
+import { useDocumentStore } from "@/stores/documentStore";
 import { useOnboardingStore } from "@/stores/onboardingStore";
+import { useAuth } from "./useAuth";
 
+/**
+ * FirestoreInitializer
+ *
+ * Runs once on app mount when a user is authenticated.
+ * Responsibilities:
+ *   1. Store basic user metadata in the onboarding store (uid, name, avatar).
+ *   2. Pre-load the user's document list into the document store.
+ *
+ * Note: segment subscriptions are handled at the document level
+ * inside /document/[docId]/page.js to scope them to the active document.
+ */
 export default function FirestoreInitializer() {
   const { user } = useAuth();
-  const setSegments = useSegmentsStore((state) => state.setSegments);
   const setUserData = useOnboardingStore((state) => state.setUserData);
+  const setDocuments = useDocumentStore((state) => state.setDocuments);
+  const documents = useDocumentStore((state) => state.documents);
 
   useEffect(() => {
-    let unsubscribe = () => {};
-    // This hook will re-run if the user object changes (e.g., from null to a user ID).
-    if (user) {
-      const userInfo = {
-        uid: user.uid,
-        displayName: user.displayName,
-        avatar: user.photoURL,
-      };
-      setUserData(userInfo);
+    if (!user) return;
 
-      // We set up the subscription here. It will run once when the user is available.
-      unsubscribe = subscribeToCanvasSegments(user.uid, (data) => {
-        setSegments(data);
-      });
-    }
+    // Store user identity
+    setUserData({
+      uid: user.uid,
+      displayName: user.displayName,
+      avatar: user.photoURL,
+    });
 
-    return () => {
-      // Clean up the subscription when the component unmounts.
-      if (unsubscribe) {
-        unsubscribe();
+    // Only fetch docs if the store is empty (avoids re-fetching on every mount)
+    if (documents.length > 0) return;
+
+    const fetchDocuments = async () => {
+      try {
+        const res = await fetch(`/api/documents?userId=${user.uid}`);
+        if (res.ok) {
+          const { documents: docs } = await res.json();
+          setDocuments(docs);
+        }
+      } catch (err) {
+        console.error("FirestoreInitializer: failed to load documents:", err);
       }
     };
-  }, [user, setSegments, setUserData]);
 
-  // This component doesn't render any UI, it just handles the side effect.
+    fetchDocuments();
+  }, [user, setUserData, setDocuments, documents.length]);
+
   return null;
 }

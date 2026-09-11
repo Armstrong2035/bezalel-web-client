@@ -1,11 +1,13 @@
-import { Poppins } from "next/font/google";
+import { Inter } from "next/font/google";
 import AppProviders from "./hooks/AppProviders";
 import LoadingWrapper from "@/components/LoadingWrapper";
+import "./globals.css";
 
-const poppins = Poppins({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
+  variable: "--font-inter",
 });
 
 export const metadata = {
@@ -70,8 +72,8 @@ export default function RootLayout({ children }) {
         <meta name="format-detection" content="telephone=no" />
       </head>
       <body
-        className={poppins.className}
-        style={{ backgroundColor: "#000000", padding: 0, margin: 0 }}
+        className={inter.className}
+        style={{ backgroundColor: "#ffffff", padding: 0, margin: 0 }}
       >
         <AppProviders>
           <LoadingWrapper>{children}</LoadingWrapper>

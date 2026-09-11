@@ -1,32 +1,58 @@
-import { updateIdeaStatus } from "@/app/lib/services/canvasSegmentService";
+import { updateIdeaInDocument } from "@/app/lib/services/documentService";
 import { NextResponse } from "next/server";
 
+/**
+ * PATCH /api/update-option
+ * Body: { userId, documentId, ideaId, accepted }
+ * Toggles the accepted status of an idea within a document.
+ */
 export async function PATCH(request) {
   try {
-    const { userId, ideaId, accepted } = await request.json();
+    const { userId, documentId, ideaId, accepted } = await request.json();
 
-    // Check for required fields
-    if (!userId || !ideaId) {
+    if (!userId || !documentId || !ideaId) {
       return NextResponse.json(
-        { error: "userId and ideaId are required." },
+        { error: "userId, documentId, and ideaId are required." },
         { status: 400 }
       );
     }
 
-    // Validate the accepted status
     if (typeof accepted !== "boolean") {
       return NextResponse.json(
-        { error: "Status must be a boolean value (true or false)." },
+        { error: "accepted must be a boolean value (true or false)." },
         { status: 400 }
       );
     }
 
-    // Call the service function with the correct arguments
-    const result = await updateIdeaStatus(userId, ideaId, accepted);
-
+    const result = await updateIdeaInDocument(userId, documentId, ideaId, accepted);
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    console.error("API Route Error:", error);
+    console.error("PATCH /api/update-option error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/update-option
+ * Body: { userId, documentId, ideaId }
+ * Permanently deletes a single idea from a document's canvasSegments.
+ */
+export async function DELETE(request) {
+  try {
+    const { userId, documentId, ideaId } = await request.json();
+
+    if (!userId || !documentId || !ideaId) {
+      return NextResponse.json(
+        { error: "userId, documentId, and ideaId are required." },
+        { status: 400 }
+      );
+    }
+
+    const { deleteIdeaFromDocument } = await import("@/app/lib/services/documentService");
+    const result = await deleteIdeaFromDocument(userId, documentId, ideaId);
+    return NextResponse.json(result, { status: 200 });
+  } catch (error) {
+    console.error("DELETE /api/update-option error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
