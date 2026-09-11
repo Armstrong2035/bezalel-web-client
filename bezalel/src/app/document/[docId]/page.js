@@ -12,6 +12,7 @@ import DocumentSection from "@/components/document/DocumentSection";
 import SectionOptionsPanel from "@/components/document/SectionOptionsPanel";
 import DocumentContext from "@/components/document/DocumentContext";
 import DocChat from "@/components/document/DocChat";
+import DocumentExport from "@/components/document/DocumentExport";
 
 export default function DocumentPage({ params }) {
   const { docId } = use(params);
@@ -37,6 +38,7 @@ export default function DocumentPage({ params }) {
   const [contextRequired, setContextRequired] = useState(false);
   // Which segment is regenerating
   const [regeneratingSectionKey, setRegeneratingSectionKey] = useState(null);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   // ── derived ──────────────────────────────────────────────────────
   const activeDoc = documents.find((d) => d.id === docId);
@@ -308,6 +310,7 @@ export default function DocumentPage({ params }) {
         hasContext={hasContext}
         onOpenContext={() => handleOpenContext(false)}
         onOpenChat={() => handleOpenChat(null)}
+        onOpenExport={() => setIsExportOpen(true)}
       />
 
       {/* Main scrollable doc */}
@@ -454,6 +457,15 @@ export default function DocumentPage({ params }) {
           }}
           initialMessage={chatInitialMessage}
           onClose={handleClosePanel}
+        />
+      )}
+
+      {isExportOpen && (
+        <DocumentExport
+          title={activeDoc?.title ?? "Business Model Canvas"}
+          context={docContext}
+          ideas={Object.values(segments ?? {})}
+          onClose={() => setIsExportOpen(false)}
         />
       )}
     </>

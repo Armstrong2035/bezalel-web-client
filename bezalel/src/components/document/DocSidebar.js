@@ -16,7 +16,7 @@ import { useAuth } from "@/app/hooks/useAuth";
  *   hasContext   — whether the doc has a saved context; drives the indicator dot
  *   onOpenContext — callback to open the context panel in the parent
  */
-export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext, onOpenChat }) {
+export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext, onOpenChat, onOpenExport }) {
   const router = useRouter();
   const { user } = useAuth();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -282,6 +282,11 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
           icon="💬"
           label="Chat"
           onClick={onOpenChat}
+        />
+        <SidebarAction
+          icon="Export"
+          label="Export brief"
+          onClick={onOpenExport}
         />
         <SidebarAction
           icon="👤"
