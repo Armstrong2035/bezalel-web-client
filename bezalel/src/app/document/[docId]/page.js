@@ -13,6 +13,7 @@ import SectionOptionsPanel from "@/components/document/SectionOptionsPanel";
 import DocumentContext from "@/components/document/DocumentContext";
 import DocChat from "@/components/document/DocChat";
 import DocumentExport from "@/components/document/DocumentExport";
+import StudioApp from "@/components/studio/StudioApp";
 
 export default function DocumentPage({ params }) {
   const { docId } = use(params);
@@ -38,7 +39,9 @@ export default function DocumentPage({ params }) {
   const [contextRequired, setContextRequired] = useState(false);
   // Which segment is regenerating
   const [regeneratingSectionKey, setRegeneratingSectionKey] = useState(null);
-  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [exportType, setExportType] = useState(null);
+  const [workspace, setWorkspace] = useState("canvas");
+  const [validationView, setValidationView] = useState("inbox");
 
   // ── derived ──────────────────────────────────────────────────────
   const activeDoc = documents.find((d) => d.id === docId);
@@ -310,10 +313,16 @@ export default function DocumentPage({ params }) {
         hasContext={hasContext}
         onOpenContext={() => handleOpenContext(false)}
         onOpenChat={() => handleOpenChat(null)}
-        onOpenExport={() => setIsExportOpen(true)}
+        onOpenBusinessModel={() => setWorkspace("canvas")}
+        onOpenValidation={() => setWorkspace("validation")}
+        workspace={workspace}
+        validationView={validationView}
+        onValidationViewChange={setValidationView}
+        onOpenExportBrief={() => setExportType("brief")}
+        onOpenExportCanvas={() => setExportType("canvas")}
       />
 
-      {/* Main scrollable doc */}
+      {/* Main scrollable document workspace */}
       <main
         style={{
           flex: 1,
@@ -324,7 +333,19 @@ export default function DocumentPage({ params }) {
           pointerEvents: anyPanelOpen ? "none" : "auto",
         }}
       >
-        <div
+        {workspace === "validation" ? (
+          <StudioApp
+            document={{
+              id: docId,
+              title: activeDoc?.title ?? "Business Model Canvas",
+              goal: docContext?.idea ?? "",
+            }}
+            onOpenBusinessModel={() => setWorkspace("canvas")}
+            hideSidebar
+            activeView={validationView}
+            onViewChange={setValidationView}
+          />
+        ) : <div
           style={{
             maxWidth: 720,
             margin: "0 auto",
@@ -412,7 +433,7 @@ export default function DocumentPage({ params }) {
               onOpenPanel={handleOpenPanel}
             />
           ))}
-        </div>
+        </div>}
       </main>
 
       {/* Section options panel */}
@@ -460,12 +481,13 @@ export default function DocumentPage({ params }) {
         />
       )}
 
-      {isExportOpen && (
+      {exportType && (
         <DocumentExport
           title={activeDoc?.title ?? "Business Model Canvas"}
           context={docContext}
           ideas={Object.values(segments ?? {})}
-          onClose={() => setIsExportOpen(false)}
+          variant={exportType}
+          onClose={() => setExportType(null)}
         />
       )}
     </>

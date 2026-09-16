@@ -346,10 +346,31 @@ export const saveChatMessage = async (userId, documentId, message) => {
     id: ref.id,
     role: message.role,
     content: message.content,
+    ...(message.reasoning ? { reasoning: message.reasoning } : {}),
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
   return ref.id;
+};
+
+/** Stores compact, durable AI memory for a document's chat. */
+export const saveChatMemory = async (userId, documentId, memory) => {
+  if (!userId || !documentId) throw new Error("userId and documentId are required");
+
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("documents")
+    .doc(documentId)
+    .update({
+      chatMemory: memory,
+      chatMemoryUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+};
+
+export const getChatMemory = async (userId, documentId) => {
+  const document = await getDocument(userId, documentId);
+  return document?.chatMemory ?? null;
 };
 
 /**
@@ -391,11 +412,21 @@ export const clearChatHistory = async (userId, documentId) => {
     .collection("chat")
     .get();
 
-  if (snapshot.empty) return { success: true };
+  if (!snapshot.empty) {
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+  }
 
-  const batch = db.batch();
-  snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-  await batch.commit();
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("documents")
+    .doc(documentId)
+    .update({
+      chatMemory: admin.firestore.FieldValue.delete(),
+      chatMemoryUpdatedAt: admin.firestore.FieldValue.delete(),
+    });
 
   return { success: true };
 };

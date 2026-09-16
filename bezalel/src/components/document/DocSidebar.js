@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { canvasSections } from "@/app/segments/canvasSection";
 import { useDocumentStore } from "@/stores/documentStore";
 import { useAuth } from "@/app/hooks/useAuth";
+import { StudioNavigation } from "@/components/studio/StudioApp";
 
 /**
  * Left sidebar for the document view.
@@ -16,7 +17,7 @@ import { useAuth } from "@/app/hooks/useAuth";
  *   hasContext   — whether the doc has a saved context; drives the indicator dot
  *   onOpenContext — callback to open the context panel in the parent
  */
-export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext, onOpenChat, onOpenExport }) {
+export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext, onOpenChat, onOpenBusinessModel, onOpenValidation, workspace, validationView, onValidationViewChange, onOpenExportBrief, onOpenExportCanvas }) {
   const router = useRouter();
   const { user } = useAuth();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -207,8 +208,8 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
         </button>
       </div>
 
-      {/* Section anchors */}
-      <div style={{ padding: "4px 0", flex: 1 }}>
+      {/* Canvas anchors are intentionally kept out of the primary workspace navigation. */}
+      {false && <div style={{ padding: "4px 0", flex: 1 }}>
         <div
           style={{
             fontSize: 11,
@@ -261,9 +262,9 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
             </a>
           );
         })}
-      </div>
+      </div>}
 
-      {/* Bottom actions */}
+      {/* Workspace actions */}
       <div
         style={{
           borderTop: "1px solid #e8e8e6",
@@ -283,11 +284,16 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
           label="Chat"
           onClick={onOpenChat}
         />
-        <SidebarAction
-          icon="Export"
-          label="Export brief"
-          onClick={onOpenExport}
+        <BusinessModelNavigation
+          active={workspace === "canvas"}
+          onOpen={onOpenBusinessModel}
         />
+        <StudioNavigation
+          view={validationView}
+          setView={onValidationViewChange}
+          onOpen={onOpenValidation}
+        />
+        <ExportMenu onExportBrief={onOpenExportBrief} onExportCanvas={onOpenExportCanvas} />
         <SidebarAction
           icon="👤"
           label="Profile"
@@ -303,7 +309,92 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
   );
 }
 
+function BusinessModelNavigation({ active, onOpen }) {
+  return (
+    <div style={{ margin: "8px 0 4px" }}>
+      <button
+        onClick={onOpen}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          width: "100%",
+          padding: "7px 8px",
+          border: "none",
+          borderRadius: 4,
+          background: active ? "#e9e9e4" : "transparent",
+          color: "#252523",
+          textAlign: "left",
+          font: "inherit",
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        <span style={{ color: "#8a8a84", fontSize: 14, lineHeight: 1 }}>⌄</span>
+        Business Model
+      </button>
+      <div style={{ marginLeft: 14, paddingLeft: 10, borderLeft: "1px solid #dddeda" }}>
+        <button
+          onClick={onOpen}
+          style={{
+            width: "100%",
+            padding: "6px 8px",
+            border: "none",
+            borderRadius: 4,
+            background: "transparent",
+            color: active ? "#222" : "#6e6e69",
+            textAlign: "left",
+            font: "inherit",
+            fontSize: 12,
+            fontWeight: active ? 700 : 400,
+            cursor: "pointer",
+          }}
+        >
+          Canvas
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ExportMenu({ onExportBrief, onExportCanvas }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const choose = (action) => {
+    setIsOpen(false);
+    action();
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      <SidebarAction icon="Export" label="Export" onClick={() => setIsOpen((open) => !open)} />
+      {isOpen && (
+        <div style={{ position: "absolute", left: 8, right: 8, bottom: "calc(100% + 4px)", background: "white", border: "1px solid #ddd", borderRadius: 6, boxShadow: "0 6px 18px rgba(0,0,0,0.12)", overflow: "hidden", zIndex: 20 }}>
+          <button onClick={() => choose(onExportBrief)} style={exportOptionStyle}>Export brief</button>
+          <button onClick={() => choose(onExportCanvas)} style={exportOptionStyle}>Export canvas</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const exportOptionStyle = {
+  display: "block",
+  width: "100%",
+  padding: "8px 10px",
+  background: "white",
+  border: "none",
+  cursor: "pointer",
+  color: "#444",
+  fontSize: 12,
+  fontFamily: "inherit",
+  textAlign: "left",
+};
+
 function SidebarAction({ icon, label, onClick }) {
+  if (!["Validation Studio", "Export"].includes(label)) return null;
+
   return (
     <button
       onClick={onClick}

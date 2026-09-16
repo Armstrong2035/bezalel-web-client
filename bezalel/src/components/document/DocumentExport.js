@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { canvasSections } from "@/app/segments/canvasSection";
 
 const statusFor = (idea) =>
@@ -35,11 +36,22 @@ function groupedIdeas(ideas, status) {
     .filter(({ ideas: sectionIdeas }) => sectionIdeas.length > 0);
 }
 
-function buildMarkdown(title, context, ideas) {
+function buildMarkdown(title, context, ideas, brief) {
   const nowGroups = groupedIdeas(ideas, "now");
   const laterGroups = groupedIdeas(ideas, "later");
   const contextEntries = Object.entries(context ?? {}).filter(([, value]) => value);
   const lines = [`# ${title}`, "", `Exported ${new Date().toLocaleDateString()}`, ""];
+
+  if (brief) {
+    lines.push("## Business Brief", "", brief.summary, "");
+    [["Current focus", brief.focus], ["Key risks", brief.risks], ["Immediate next steps", brief.nextSteps]].forEach(([heading, items]) => {
+      if (items?.length) {
+        lines.push(`### ${heading}`, "");
+        items.forEach((item) => lines.push(`- ${item}`));
+        lines.push("");
+      }
+    });
+  }
 
   if (contextEntries.length > 0) {
     lines.push("## Business Context", "");
@@ -82,6 +94,27 @@ function buildMarkdown(title, context, ideas) {
   return lines.join("\n");
 }
 
+function buildCanvasMarkdown(title, context, ideas) {
+  const lines = [`# ${title} — Business Model Canvas`, "", `Exported ${new Date().toLocaleDateString()}`, ""];
+  if (context?.idea) lines.push(`**Business idea:** ${context.idea}`, "");
+
+  canvasSections.forEach((section) => {
+    const activeIdeas = ideas
+      .filter((idea) => idea.segment === section.key && statusFor(idea) === "now")
+      .sort((a, b) => (a.priority ?? Number.MAX_SAFE_INTEGER) - (b.priority ?? Number.MAX_SAFE_INTEGER));
+    lines.push(`## ${section.title}`, "");
+    if (activeIdeas.length === 0) {
+      lines.push("No current decision selected.", "");
+    } else {
+      activeIdeas.forEach((idea, index) => {
+        lines.push(`${index + 1}. **${idea.title}**${idea.description ? ` — ${idea.description}` : ""}`);
+      });
+      lines.push("");
+    }
+  });
+  return lines.join("\n");
+}
+
 function buildPrintHtml(title, markdown) {
   const content = escapeHtml(markdown)
     .replace(/^# (.*)$/gm, "<h1>$1</h1>")
@@ -97,15 +130,42 @@ function buildPrintHtml(title, markdown) {
   </style></head><body>${content}</body></html>`;
 }
 
-export default function DocumentExport({ title, context, ideas, onClose }) {
-  const markdown = buildMarkdown(title, context, ideas);
+export default function DocumentExport({ title, context, ideas, variant = "brief", onClose }) {
+  const [brief, setBrief] = useState(null);
+  const [includeBrief, setIncludeBrief] = useState(false);
+  const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
+  const [briefError, setBriefError] = useState(null);
+  const isBrief = variant === "brief";
+  const markdown = isBrief
+    ? buildMarkdown(title, context, ideas, includeBrief ? brief : null)
+    : buildCanvasMarkdown(title, context, ideas);
+
+  const handleGenerateBrief = async () => {
+    setIsGeneratingBrief(true);
+    setBriefError(null);
+    try {
+      const response = await fetch("/api/business-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, context, ideas }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Could not generate the Business Brief.");
+      setBrief(body.brief);
+      setIncludeBrief(true);
+    } catch (error) {
+      setBriefError(error.message);
+    } finally {
+      setIsGeneratingBrief(false);
+    }
+  };
 
   const handleDownload = () => {
     const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "business-canvas"}-brief.md`;
+    anchor.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "business-canvas"}-${variant}.md`;
     anchor.click();
     URL.revokeObjectURL(url);
   };
@@ -124,10 +184,33 @@ export default function DocumentExport({ title, context, ideas, onClose }) {
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.18)" }} />
       <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 61, width: "min(460px, calc(100vw - 32px))", background: "white", borderRadius: 10, boxShadow: "0 16px 48px rgba(0,0,0,0.2)", padding: 24 }}>
-        <h2 style={{ margin: "0 0 8px", fontSize: 18 }}>Export business brief</h2>
+        <h2 style={{ margin: "0 0 8px", fontSize: 18 }}>{isBrief ? "Export business brief" : "Export canvas"}</h2>
         <p style={{ margin: "0 0 20px", fontSize: 13, color: "#666", lineHeight: 1.5 }}>
-          Includes your business context, active decisions in priority order, assumptions to test, and later plans.
+          {isBrief
+            ? "Includes your business context, active decisions in priority order, assumptions to test, and later plans."
+            : "A clean snapshot of the current choices in each of the nine canvas sections."}
         </p>
+        {isBrief && <div style={{ margin: "0 0 20px", padding: 14, border: "1px solid #e8e8e6", borderRadius: 7, background: "#fafafa" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+            <div>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>AI Business Brief</p>
+              <p style={{ margin: "3px 0 0", fontSize: 12, color: "#777" }}>A reviewable summary based only on your current canvas.</p>
+            </div>
+            <button onClick={handleGenerateBrief} disabled={isGeneratingBrief} style={secondaryButton}>
+              {isGeneratingBrief ? "Generating…" : brief ? "Regenerate" : "Generate"}
+            </button>
+          </div>
+          {briefError && <p role="alert" style={{ margin: "10px 0 0", fontSize: 12, color: "#b91c1c" }}>{briefError}</p>}
+          {brief && (
+            <div style={{ marginTop: 12 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 600, color: "#444", marginBottom: 8 }}>
+                <input type="checkbox" checked={includeBrief} onChange={(event) => setIncludeBrief(event.target.checked)} />
+                Include in export
+              </label>
+              <p style={{ margin: 0, fontSize: 12, color: "#555", lineHeight: 1.55 }}>{brief.summary}</p>
+            </div>
+          )}
+        </div>}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button onClick={handlePrint} style={primaryButton}>Print / Save as PDF</button>
           <button onClick={handleDownload} style={secondaryButton}>Download Markdown</button>

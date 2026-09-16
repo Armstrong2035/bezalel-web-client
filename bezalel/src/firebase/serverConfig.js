@@ -1,4 +1,5 @@
 import admin from "firebase-admin";
+import { initializeFirestore } from "firebase-admin/firestore";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -44,8 +45,9 @@ if (!admin.apps.length) {
   }
 }
 
-// Get Firestore instance
-const db = admin.firestore();
+// Use HTTP/1.1 REST for server-side Firestore. This avoids a gRPC-only
+// connection requirement in restricted deployment and local environments.
+const db = initializeFirestore(admin.app(), { preferRest: true });
 
 // Get Auth instance
 const auth = admin.auth();

@@ -66,3 +66,50 @@ body {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+@media (max-width: 760px) {
+  .studio-app {
+    display: block !important;
+  }
+
+  .studio-sidebar {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto;
+    position: static !important;
+    display: flex !important;
+    overflow-x: auto;
+    padding: 10px !important;
+    gap: 4px;
+    border-right: 0 !important;
+    border-bottom: 1px solid #e7e7e2;
+  }
+
+  .studio-sidebar > div,
+  .studio-sidebar > button {
+    flex: 0 0 auto;
+  }
+
+  .studio-sidebar > div:not(:last-child) {
+    border: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .studio-sidebar > div:last-child {
+    display: none;
+  }
+
+  .studio-inbox-layout {
+    display: block !important;
+  }
+
+  .studio-list-pane {
+    border-right: 0 !important;
+    border-bottom: 1px solid #e7e7e2;
+  }
+
+  .studio-read-pane {
+    min-height: 60vh;
+  }
+}

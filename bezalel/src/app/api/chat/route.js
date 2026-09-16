@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { buildCanvasReasoning, buildCanvasSummary } from "@/app/lib/engines/canvasEngine/canvasReasoning";
-import { saveChatMessage } from "@/app/lib/services/documentService";
+import { getChatMemory, saveChatMemory, saveChatMessage } from "@/app/lib/services/documentService";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-3.5-flash";
-const GEMINI_STREAM_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+const DEEPSEEK_MODEL = "deepseek-v4-flash";
+const DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions";
 
 /**
  * Builds the system prompt — embeds canvas summary + full reasoning chain.
  */
-function buildSystemPrompt(documentSnapshot) {
+function buildSystemPrompt(documentSnapshot, chatMemory) {
   const summary = buildCanvasSummary(documentSnapshot);
   const reasoning = buildCanvasReasoning(documentSnapshot);
 
@@ -18,6 +18,8 @@ function buildSystemPrompt(documentSnapshot) {
 You are talking with the founder of this business. You have full access to their current canvas state.
 
 ${summary}
+
+${chatMemory ? `DURABLE CONVERSATION MEMORY:\n${JSON.stringify(chatMemory)}\n\nUse this memory as background context. It records prior decisions and open questions, but the current canvas remains the source of truth.` : ""}
 
 Your role:
 - Help the founder interrogate, stress-test, and improve their canvas
@@ -33,6 +35,40 @@ DO NOT:
 - Repeat the canvas back to them unless they asked
 
 ${reasoning}`;
+}
+
+async function refreshChatMemory(existingMemory, userMessage, assistantMessage) {
+  const prompt = `Create durable memory for a founder's business-canvas conversation. Use only information in the previous memory and the latest exchange. Do not invent facts, recommendations, customer segments, commitments, or metrics. Keep it concise and preserve only information useful in future conversation.
+
+Previous memory: ${JSON.stringify(existingMemory ?? {})}
+Latest founder message: ${userMessage}
+Latest advisor response: ${assistantMessage}
+
+Return JSON only:
+{
+  "summary": "2-4 sentences capturing durable context.",
+  "decisions": ["confirmed decisions or priorities"],
+  "preferences": ["founder constraints or preferences"],
+  "openQuestions": ["unresolved questions worth carrying forward"]
+}`;
+
+  const response = await fetch(DEEPSEEK_CHAT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: DEEPSEEK_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      thinking: { type: "disabled" },
+    }),
+  });
+
+  if (!response.ok) throw new Error("Memory refresh failed");
+  const data = await response.json();
+  return JSON.parse(data.choices?.[0]?.message?.content ?? "{}");
 }
 
 /**
@@ -63,33 +99,61 @@ export async function POST(request) {
     if (!documentSnapshot?.context?.idea?.trim()) {
       return NextResponse.json({ error: "Document context is required before chatting" }, { status: 400 });
     }
+    if (!DEEPSEEK_API_KEY) {
+      return NextResponse.json({ error: "DEEPSEEK_API_KEY is not configured" }, { status: 500 });
+    }
 
     // Build reasoning chain — sent to client AND embedded in system prompt
     const reasoningText = buildCanvasReasoning(documentSnapshot);
-    const systemPrompt = buildSystemPrompt(documentSnapshot);
+    let chatMemory = null;
+    try {
+      chatMemory = await getChatMemory(userId, documentId);
+    } catch (memoryError) {
+      // A transient Firestore failure must not make the chat unavailable.
+      console.error("[chat] Failed to load memory; continuing without it:", memoryError);
+    }
+    const systemPrompt = buildSystemPrompt(documentSnapshot, chatMemory);
 
     // Parse reasoning into discrete steps for the client UI
     const reasoningSteps = parseReasoningSteps(reasoningText);
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
 
-    // Gemini contents
-    const contents = [
-      { role: "user",  parts: [{ text: systemPrompt }] },
-      { role: "model", parts: [{ text: "Understood. I have full context of this canvas and I'm ready to help the founder interrogate it." }] },
-      ...messages.map((m) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
+    // Persist the founder's turn before generation so a stopped stream or
+    // network failure cannot erase what they wrote.
+    if (lastUser) {
+      try {
+        await saveChatMessage(userId, documentId, { role: "user", content: lastUser.content });
+      } catch (saveError) {
+        // Chat remains usable if the database is temporarily unreachable.
+        console.error("[chat] Failed to save the founder's message:", saveError);
+      }
+    }
+
+    const chatMessages = [
+      { role: "system", content: systemPrompt },
+      ...messages.map((message) => ({
+        role: message.role === "assistant" ? "assistant" : "user",
+        content: message.content,
       })),
     ];
 
-    const geminiRes = await fetch(GEMINI_STREAM_URL, {
+    const deepseekRes = await fetch(DEEPSEEK_CHAT_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        messages: chatMessages,
+        stream: true,
+        thinking: { type: "disabled" },
+      }),
     });
 
-    if (!geminiRes.ok) {
-      const err = await geminiRes.json();
-      throw new Error(`Gemini error ${geminiRes.status}: ${JSON.stringify(err)}`);
+    if (!deepseekRes.ok) {
+      const err = await deepseekRes.json();
+      throw new Error(`DeepSeek error ${deepseekRes.status}: ${JSON.stringify(err)}`);
     }
 
     const encoder = new TextEncoder();
@@ -104,7 +168,7 @@ export async function POST(request) {
         controller.enqueue(encoder.encode(preamble));
 
         // ── Stream Gemini response ──────────────────────────────────────
-        const reader = geminiRes.body.getReader();
+        const reader = deepseekRes.body.getReader();
         const decoder = new TextDecoder();
 
         try {
@@ -122,7 +186,7 @@ export async function POST(request) {
 
               try {
                 const event = JSON.parse(jsonStr);
-                const text = event.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+                const text = event.choices?.[0]?.delta?.content ?? "";
                 if (text) {
                   fullResponse += text;
                   controller.enqueue(encoder.encode(text));
@@ -138,17 +202,15 @@ export async function POST(request) {
 
           // Persist both turns after stream completes
           if (fullResponse && userId && documentId) {
-            const lastUser = [...messages].reverse().find((m) => m.role === "user");
             try {
-              if (lastUser) {
-                await saveChatMessage(userId, documentId, { role: "user", content: lastUser.content });
-              }
               await saveChatMessage(userId, documentId, {
                 role: "assistant",
                 content: fullResponse,
                 // Store reasoning with the message so history shows it too
                 reasoning: reasoningSteps,
               });
+              const refreshedMemory = await refreshChatMemory(chatMemory, lastUser?.content ?? "", fullResponse);
+              await saveChatMemory(userId, documentId, refreshedMemory);
             } catch (saveErr) {
               console.error("[chat] Failed to save messages:", saveErr);
             }

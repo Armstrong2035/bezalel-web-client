@@ -10,7 +10,7 @@ export default function GoogleAuthProvider({ cta }) {
     try {
       const { user } = await signInWithGoogle();
       if (user) {
-        await router.push("/documents");
+        await router.push("/inbox");
       }
       return cta === "Sign up" ? user.uid : null;
     } catch (error) {
