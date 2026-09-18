@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const businessDocuments = [
@@ -72,9 +72,9 @@ const navGroups = [
 ];
 
 const actionLabels = {
-  create_video: "Create Video",
-  create_carousel: "Create Carousel",
-  write_post: "Write Post",
+  write_post: "Create SEO Brief",
+  create_carousel: "Create Carousel Brief",
+  create_video: "Create Video Brief",
   research_deeper: "Research Deeper",
 };
 
@@ -96,6 +96,7 @@ export default function StudioApp({ document, onOpenBusinessModel, hideSidebar =
   const [job, setJob] = useState(null);
   const [drafts, setDrafts] = useState([]);
   const [published, setPublished] = useState([]);
+  const [marketingConnection, setMarketingConnection] = useState({ status: "idle", message: "" });
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
 
@@ -107,6 +108,28 @@ export default function StudioApp({ document, onOpenBusinessModel, hideSidebar =
     const haystack = `${item.title} ${item.summary} ${item.category}`.toLowerCase();
     return item.document?.id === activeBusinessId && matchesFilter && haystack.includes(search.toLowerCase());
   }), [activeBusinessId, filter, items, search]);
+
+  const checkMarketingConnection = useCallback(async () => {
+    setMarketingConnection({ status: "checking", message: "" });
+    try {
+      const response = await fetch("/api/marketing?resource=rules", { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Poysis could not load marketing data.");
+      const rules = Array.isArray(payload.data) ? payload.data : payload.data?.data ?? [];
+      setMarketingConnection({
+        status: "connected",
+        message: String(rules.length) + " saved " + (rules.length === 1 ? "rule" : "rules") + " available",
+      });
+    } catch (error) {
+      setMarketingConnection({ status: "error", message: error.message });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (view === "sources" && marketingConnection.status === "idle") {
+      checkMarketingConnection();
+    }
+  }, [view, marketingConnection.status, checkMarketingConnection]);
 
   const openBusiness = (businessId) => {
     setActiveBusinessId(businessId);
@@ -212,7 +235,7 @@ export default function StudioApp({ document, onOpenBusinessModel, hideSidebar =
         {view === "published" && <ArtifactList label="Published" artifacts={published.filter((artifact) => artifact.documentId === activeBusinessId)} empty="Nothing has been published yet. Approval always comes first." />}
         {view === "projects" && <ProjectsView />}
         {view === "automations" && <AutomationsView />}
-        {view === "sources" && <SourcesView />}
+        {view === "sources" && <SourcesView connection={marketingConnection} onRefresh={checkMarketingConnection} />}
         {view === "settings" && <SettingsView />}
         {view === "business" && <BusinessBridge router={router} onOpenBusinessModel={onOpenBusinessModel} />}
       </main>
@@ -266,8 +289,37 @@ function EmptyBusinessInbox({ business }) {
   return <section style={styles.module}><p style={styles.eyebrow}>{business?.title ?? "BUSINESS"}</p><div style={styles.empty}><h3>Nothing worth bothering you with right now.</h3><p>Poysis will surface research when it finds something useful for this business model.</p></div></section>;
 }
 
-function InboxView({ items, activeItem, chooseItem, filter, setFilter, categories, reply, setReply, replySubmitted, recording, transcribing, audioUrl, startRecording, stopRecording, submitReply, job, runAction, approve, attachDocument }) {
+function LegacyInboxView({ items, activeItem, chooseItem, filter, setFilter, categories, reply, setReply, replySubmitted, recording, transcribing, audioUrl, startRecording, stopRecording, submitReply, job, runAction, approve, attachDocument }) {
   return <div className="studio-inbox-layout" style={styles.inboxLayout}><section className="studio-list-pane" style={styles.listPane}><div style={styles.filters}>{categories.map((category) => <button key={category} onClick={() => setFilter(category)} style={{ ...styles.filter, ...(filter === category ? styles.filterActive : {}) }}>{category}</button>)}</div>{items.length ? items.map((item) => <button key={item.id} onClick={() => chooseItem(item.id)} style={{ ...styles.item, ...(activeItem.id === item.id ? styles.itemActive : {}) }}><span style={styles.itemCategory}>{item.category}</span><strong style={styles.itemTitle}>{item.title}</strong><span style={styles.itemSummary}>{item.summary}</span><span style={styles.itemFooter}>{item.document?.title ? `${item.document.title} · ` : ""}{item.evidence.map((e) => e.source).join(" · ")} <em>{item.createdAt}</em></span></button>) : <EmptyInbox />}</section><section className="studio-read-pane" style={styles.readPane}><ResearchDetail item={activeItem} reply={reply} setReply={setReply} replySubmitted={replySubmitted} recording={recording} transcribing={transcribing} audioUrl={audioUrl} startRecording={startRecording} stopRecording={stopRecording} submitReply={submitReply} job={job} runAction={runAction} approve={approve} attachDocument={attachDocument} /></section></div>;
+}
+
+function InboxView({ items, activeItem, chooseItem, filter, setFilter, categories, reply, setReply, recording, transcribing, audioUrl, startRecording, stopRecording, submitReply, job, runAction, approve, attachDocument }) {
+  return <div className="studio-inbox-layout" style={styles.inboxLayout}>
+    <section className="studio-list-pane" style={styles.listPane}>
+      <div style={styles.filters}>{categories.map((category) => <button key={category} onClick={() => setFilter(category)} style={{ ...styles.filter, ...(filter === category ? styles.filterActive : {}) }}>{category}</button>)}</div>
+      {items.length ? items.map((item) => <button key={item.id} onClick={() => chooseItem(item.id)} style={{ ...styles.item, ...(activeItem.id === item.id ? styles.itemActive : {}) }}><span style={styles.itemCategory}>{item.category}</span><strong style={styles.itemTitle}>{item.title}</strong><span style={styles.itemSummary}>{item.summary}</span><span style={styles.itemFooter}>{item.document?.title ? item.document.title + " · " : ""}{item.evidence.map((e) => e.source).join(" · ")} <em>{item.createdAt}</em></span></button>) : <EmptyInbox />}
+    </section>
+    <section className="studio-read-pane" style={styles.readPane}>
+      <ResearchDetail item={activeItem} reply={reply} setReply={setReply} replySubmitted={false} recording={recording} transcribing={transcribing} audioUrl={audioUrl} startRecording={startRecording} stopRecording={stopRecording} submitReply={submitReply} job={job} runAction={runAction} approve={approve} attachDocument={attachDocument} />
+      {!job && <BriefActionPanel runAction={runAction} />}
+    </section>
+  </div>;
+}
+
+function BriefActionPanel({ runAction }) {
+  const choices = [
+    ["write_post", "Build SEO opportunity", "Turn search demand into a keyword cluster and page brief."],
+    ["create_carousel", "Create carousel", "Turn this insight into a slide story for Instagram or TikTok."],
+    ["create_video", "Create AI UGC concept", "Turn the evidence into a creator-led video concept and script."],
+    ["research_deeper", "Research deeper", "Find more evidence before choosing a distribution surface."],
+  ];
+  return <section style={briefActionStyles.panel}>
+    <p style={styles.sectionHeading}>CREATE FROM THIS BRIEF</p>
+    <h3 style={briefActionStyles.title}>Where should this insight go?</h3>
+    <p style={briefActionStyles.intro}>Your note above becomes a constraint for the draft. Nothing publishes or runs automatically.</p>
+    <div style={briefActionStyles.grid}>{choices.map(([action, label, reason]) => <button key={action} onClick={() => runAction(action)} style={briefActionStyles.card}><strong>{label}</strong><span>{reason}</span></button>)}</div>
+    <div style={briefActionStyles.footer}><button style={styles.noteButton}>Save for later</button><button style={styles.noteButton}>Add to research target</button></div>
+  </section>;
 }
 
 function ResearchDetail({ item, reply, setReply, replySubmitted, recording, transcribing, audioUrl, startRecording, stopRecording, submitReply, job, runAction, approve, attachDocument }) {
@@ -285,10 +337,34 @@ function EmptyInbox() { return <div style={styles.empty}><h3>Nothing worth bothe
 function ArtifactList({ label, artifacts, empty }) { return <section style={styles.module}><p style={styles.eyebrow}>{label.toUpperCase()}</p>{artifacts.length ? artifacts.map((artifact) => <article key={artifact.id} style={styles.artifact}><span style={styles.artifactType}>{artifact.type}</span><div><h3>{artifact.title}</h3><p>{artifact.status} · {artifact.createdAt}</p></div></article>) : <div style={styles.empty}><h3>{empty}</h3></div>}</section>; }
 function ProjectsView() { return <section style={styles.module}><p style={styles.eyebrow}>PROJECTS</p>{["Poysis", "Christian Content", "Bezalel", "Chess Product"].map((project) => <article key={project} style={styles.project}><h3>{project}</h3><p>Research, replies, and content are kept in this context.</p></article>)}</section>; }
 function AutomationsView() { return <section style={styles.module}><p style={styles.eyebrow}>AUTOMATIONS</p><article style={styles.rule}><h3>Christian Video</h3><p><strong>When</strong> I create a video from Christian research</p><p><strong>Use</strong> Armstrong Main · Anime · 60 seconds</p><p><strong>Approval</strong> Always ask</p></article></section>; }
-function SourcesView() { return <section style={styles.module}><p style={styles.eyebrow}>DATA SOURCES</p>{[["Poysis Workspace", "Connected"], ["Google Search", "Connected"], ["YouTube", "Connected"], ["Reddit", "Connected"], ["X", "Not connected"]].map(([name, status]) => <article key={name} style={styles.source}><span>{name}</span><span style={{ color: status === "Connected" ? "#2f7d52" : "#999" }}>{status}</span></article>)}<button style={{ ...styles.secondaryButton, marginTop: 16 }}>+ Add source</button></section>; }
+function SourcesView({ connection, onRefresh }) {
+  const statusLabel = connection.status === "checking" ? "Checking…" : connection.status === "connected" ? "Connected" : connection.status === "error" ? "Needs attention" : "Not checked";
+  const statusColor = connection.status === "connected" ? "#2f7d52" : connection.status === "error" ? "#a24242" : "#999";
+  return <section style={styles.module}>
+    <p style={styles.eyebrow}>DATA SOURCES</p>
+    <h2 style={{ margin: "0 0 8px", fontSize: 22 }}>Marketing signals, explained.</h2>
+    <p style={{ maxWidth: 580, color: "#666", lineHeight: 1.65, margin: "0 0 24px" }}>Poysis supplies the evidence behind daily validation briefs. Bezalel keeps the brief, your business-model context, and every action branch together in this document.</p>
+    <article style={styles.source}><span><strong>Poysis Marketing API</strong><small style={{ display: "block", color: "#888", marginTop: 4 }}>Rules, opportunities, and imported Keyword Planner reports</small></span><span style={{ color: statusColor, fontWeight: 700 }}>{statusLabel}</span></article>
+    <article style={styles.source}><span>Keyword Planner</span><span style={{ color: "#777" }}>Imported reports</span></article>
+    <article style={styles.source}><span>Search Console</span><span style={{ color: "#777" }}>Ready when connected</span></article>
+    <article style={styles.source}><span>GA4</span><span style={{ color: "#777" }}>Ready when connected</span></article>
+    {connection.message && <p style={{ ...styles.muted, color: connection.status === "error" ? "#a24242" : "#6a6a64" }}>{connection.message}</p>}
+    <button onClick={onRefresh} disabled={connection.status === "checking"} style={{ ...styles.secondaryButton, marginTop: 16 }}>{connection.status === "checking" ? "Checking connection…" : "Check Poysis connection"}</button>
+    <div style={{ marginTop: 34, paddingTop: 20, borderTop: "1px solid #e6e6e0", color: "#62625c", fontSize: 13, lineHeight: 1.65 }}><strong>Where this goes next</strong><p>A research target runs daily, creates an evidence-backed brief in Inbox, then branches into SEO, carousel, video, or deeper research—only when you choose.</p></div>
+  </section>;
+}
 function SettingsView() { return <section style={styles.module}><p style={styles.eyebrow}>SETTINGS</p><article style={styles.rule}><h3>Armstrong Main</h3><p>Reflective · Conversational · Story-driven</p><p>Anime · 45–60 seconds · 9:16 · Captions on</p><p><strong>Approval:</strong> Always required</p></article></section>; }
 function BusinessBridge({ router, onOpenBusinessModel }) { return <section style={styles.module}><p style={styles.eyebrow}>BUSINESS MODEL</p><h2 style={styles.readTitle}>Your model shapes this document’s research.</h2><p style={{ color: "#666", maxWidth: 580, lineHeight: 1.7 }}>The customer, problem, value proposition, channels, and priorities in this canvas determine what belongs in this validation inbox.</p><button onClick={onOpenBusinessModel ?? (() => router.push("/documents"))} style={{ ...styles.primaryButton, marginTop: 24 }}>Open Business Model</button></section>; }
 function titleFor(view) { return ({ inbox: "Inbox", drafts: "Drafts", published: "Published", projects: "Projects", business: "Business Model", automations: "Automations", sources: "Data Sources", settings: "Settings" })[view] ?? "Inbox"; }
+
+const briefActionStyles = {
+  panel: { margin: "0 46px 56px", padding: "20px", border: "1px solid #dfe5de", borderRadius: 9, background: "#f8fbf8" },
+  title: { margin: "0 0 7px", fontSize: 19, letterSpacing: "-0.02em" },
+  intro: { margin: "0 0 16px", color: "#686862", fontSize: 13, lineHeight: 1.55 },
+  grid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 },
+  card: { minHeight: 94, display: "grid", alignContent: "start", gap: 7, padding: "13px", border: "1px solid #d8ded7", borderRadius: 7, background: "#fff", color: "#30302d", textAlign: "left", font: "inherit", fontSize: 12, lineHeight: 1.45, cursor: "pointer" },
+  footer: { marginTop: 5 },
+};
 
 const homeStyles = {
   activeBusiness: { margin: "18px 10px 4px", padding: "12px", border: "1px solid #e0e0da", borderRadius: 7, background: "#fff" },
