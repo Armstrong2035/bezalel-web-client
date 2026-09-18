@@ -1,60 +1,46 @@
-import { Box, Typography, Stack } from "@mui/material";
+import { Typography, Stack } from "@mui/material";
 
 export default function HeroText() {
-  const heroText = {
-    title:
-      "Turn your idea into a viable business plan in just 45 minutes, with AI",
-    subtitle:
-      "Bezalel guides you through a business model canvas and gives you a clear 90-day action plan — so you can go from idea to execution with confidence.",
-  };
-
   return (
-    <Stack spacing={4} alignItems="center" sx={{ py: 5 }}>
+    <Stack spacing={3} alignItems="center" sx={{ py: { xs: 8, md: 12 }, maxWidth: 820, mx: "auto" }}>
       <Typography
+        component="h1"
         textAlign="center"
         sx={{
-          // Responsive typography - smaller on mobile, larger on desktop
-          fontSize: {
-            xs: "32px", // Mobile: 32px
-            sm: "48px", // Small tablet: 48px
-            md: "60px", // Medium: 60px
-            lg: "71px", // Desktop: 71px (original size)
-          },
-          lineHeight: {
-            xs: "36px", // Mobile: 36px
-            sm: "54px", // Small tablet: 54px
-            md: "67px", // Medium: 67px
-            lg: "79px", // Desktop: 79px (original line height)
-          },
-          fontFamily: "Poppins, sans-serif",
+          fontSize: { xs: "40px", sm: "56px", md: "72px", lg: "84px" },
+          lineHeight: { xs: "46px", sm: "62px", md: "80px", lg: "92px" },
           fontWeight: 700,
-          color: "whitesmoke",
+          letterSpacing: "-0.03em",
+          color: "#f5f5f2",
         }}
       >
-        {heroText.title}
+        Your AI Business Co-Founder
       </Typography>
+
       <Typography
         textAlign="center"
         sx={{
-          // Responsive subtext typography
-          fontSize: {
-            xs: "16px", // Mobile: 16px
-            sm: "20px", // Small tablet: 20px
-            md: "24px", // Medium: 24px
-            lg: "28px", // Desktop: 28px (original size)
-          },
-          lineHeight: {
-            xs: "18px", // Mobile: 18px
-            sm: "22px", // Small tablet: 22px
-            md: "27px", // Medium: 27px
-            lg: "31px", // Desktop: 31px (original line height)
-          },
-          fontFamily: "Poppins, sans-serif",
+          fontSize: { xs: "18px", sm: "20px", md: "24px" },
+          lineHeight: 1.5,
           fontWeight: 400,
-          color: "whitesmoke",
+          color: "#b8b8b0",
         }}
       >
-        {heroText.subtitle}
+        For solo operators who are good at building products.
+      </Typography>
+
+      <Typography
+        textAlign="center"
+        sx={{
+          fontSize: { xs: "15px", sm: "17px" },
+          lineHeight: 1.7,
+          fontWeight: 400,
+          color: "#8a8a84",
+          maxWidth: 620,
+        }}
+      >
+        Bezalel helps research your business, find opportunities, and handle
+        customer-facing operations with AI agents.
       </Typography>
     </Stack>
   );

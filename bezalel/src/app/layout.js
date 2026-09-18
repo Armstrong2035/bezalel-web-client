@@ -11,18 +11,18 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Bezalel - Turn Your Idea Into a Business Plan in 45 Minutes",
+  title: "Bezalel — Your AI Business Co-Founder",
   description:
-    "Bezalel guides you through a business model canvas and gives you a clear 90-day action plan — so you can go from idea to execution with confidence.",
-  metadataBase: new URL("https://bezalel.io"),
+    "Bezalel helps research your business, find opportunities, and handle customer-facing operations with AI agents. For solo operators who are good at building products.",
+  metadataBase: new URL("https://bezalel-web-client.vercel.app"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Bezalel - Turn Your Idea Into a Business Plan in 45 Minutes",
+    title: "Bezalel — Your AI Business Co-Founder",
     description:
-      "Bezalel guides you through a business model canvas and gives you a clear 90-day action plan — so you can go from idea to execution with confidence.",
-    url: "https://bezalel.io",
+      "Bezalel helps research your business, find opportunities, and handle customer-facing operations with AI agents. For solo operators who are good at building products.",
+    url: "https://bezalel-web-client.vercel.app",
     siteName: "Bezalel",
     type: "website",
     images: [
@@ -30,15 +30,15 @@ export const metadata = {
         url: "https://res.cloudinary.com/dldvbrmzb/image/upload/v1755881168/Mark_dtr0uw.png",
         width: 1200,
         height: 630,
-        alt: "Bezalel - AI Business Planning Tool",
+        alt: "Bezalel - AI Business Co-Founder",
       },
     ],
   },
   twitter: {
     card: "summary_large_image", // fixed
-    title: "Bezalel - Turn Your Idea Into a Business Plan in 45 Minutes",
+    title: "Bezalel — Your AI Business Co-Founder",
     description:
-      "Bezalel guides you through a business model canvas and gives you a clear 90-day action plan — so you can go from idea to execution with confidence.",
+      "Bezalel helps research your business, find opportunities, and handle customer-facing operations with AI agents. For solo operators who are good at building products.",
     images: [
       "https://res.cloudinary.com/dldvbrmzb/image/upload/v1755881168/Mark_dtr0uw.png",
     ],
