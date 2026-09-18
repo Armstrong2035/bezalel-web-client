@@ -17,70 +17,55 @@ import { Menu as MenuIcon } from "@mui/icons-material";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const fontFamily =
+  "'Poppins', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
 export default function LandingNav() {
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navItems = {
-    left: {
-      logo: "Bezalel",
-      url: "/",
-    },
-    right: [
-      // {
-      //   title: "How to build a business",
-      //   href: "/blog",
-      // },
-      {
-        title: "Sign up",
-        href: "/onboarding",
-      },
-      {
-        title: "Sign in",
-        href: "/auth/signin",
-      },
-    ],
-  };
-
   const handleNavigation = (href) => {
     router.push(href);
-    setMobileOpen(false); // Close mobile menu after navigation
+    setMobileOpen(false);
   };
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  // Mobile drawer content
   const drawer = (
     <Box sx={{ width: 250, pt: 2 }}>
       <List>
-        {navItems.right.map((item, index) => (
-          <ListItem
-            key={index}
-            onClick={() => handleNavigation(item.href)}
+        <ListItem
+          onClick={() => handleNavigation("/auth/signin")}
+          sx={{ cursor: "pointer", "&:hover": { backgroundColor: "#f5f5f4" } }}
+        >
+          <ListItemText
+            primary="Sign in"
             sx={{
-              cursor: "pointer",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              "& .MuiListItemText-primary": {
+                color: "#1a1a1a",
+                fontFamily,
+                fontWeight: 500,
+                fontSize: "1rem",
               },
             }}
-          >
-            <ListItemText
-              primary={item.title}
-              sx={{
-                "& .MuiListItemText-primary": {
-                  color: "whitesmoke",
-                  fontFamily: "Poppins, sans-serif",
-                  fontWeight: 500,
-                  fontSize: "1.1rem",
-                },
-              }}
-            />
-          </ListItem>
-        ))}
+          />
+        </ListItem>
+        <ListItem
+          onClick={() => handleNavigation("/auth/signup")}
+          sx={{ cursor: "pointer", "&:hover": { backgroundColor: "#f5f5f4" } }}
+        >
+          <ListItemText
+            primary="Get started"
+            sx={{
+              "& .MuiListItemText-primary": {
+                color: "#1a1a1a",
+                fontFamily,
+                fontWeight: 600,
+                fontSize: "1rem",
+              },
+            }}
+          />
+        </ListItem>
       </List>
     </Box>
   );
@@ -89,81 +74,76 @@ export default function LandingNav() {
     <AppBar
       position="static"
       elevation={0}
-      sx={{ backgroundColor: "transparent" }}
+      sx={{ backgroundColor: "transparent", borderBottom: "1px solid #f0f0ee" }}
     >
       <Container maxWidth="lg">
         <Toolbar
           sx={{
             justifyContent: "space-between",
-            py: { xs: 1, sm: 2 }, // Responsive padding
-            px: { xs: 0, sm: 2 }, // Responsive horizontal padding
+            py: { xs: 1, sm: 1.5 },
+            px: { xs: 0, sm: 2 },
           }}
         >
-          {/* Left side - Logo */}
           <Box
-            onClick={() => handleNavigation(navItems.left.url)}
-            sx={{
-              cursor: "pointer",
-              "&:hover": { opacity: 0.8 },
-            }}
+            onClick={() => handleNavigation("/")}
+            sx={{ cursor: "pointer", "&:hover": { opacity: 0.7 } }}
           >
             <Typography
               variant="h6"
               component="div"
               sx={{
                 fontWeight: 700,
-                color: "whitesmoke",
-                fontSize: { xs: "1.25rem", sm: "1.5rem" }, // Responsive logo size
-                fontFamily: "Poppins, sans-serif",
+                color: "#1a1a1a",
+                fontSize: { xs: "1.2rem", sm: "1.35rem" },
+                fontFamily,
               }}
             >
-              {navItems.left.logo}
+              Bezalel
             </Typography>
           </Box>
 
-          {/* Desktop Navigation */}
           {!isMobile && (
-            <Box
-              sx={{
-                display: "flex",
-                gap: { sm: 2, md: 3 },
-                alignItems: "center",
-              }}
-            >
-              {navItems.right.map((item, index) => (
-                <Button
-                  key={index}
-                  onClick={() => handleNavigation(item.href)}
-                  sx={{
-                    color: "whitesmoke",
-                    textTransform: "none",
-                    fontWeight: 500,
-                    fontSize: { sm: "0.85rem", md: "0.95rem" }, // Responsive font size
-                    fontFamily: "Poppins, sans-serif",
-                    "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.1)",
-                    },
-                  }}
-                >
-                  {item.title}
-                </Button>
-              ))}
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              <Button
+                onClick={() => handleNavigation("/auth/signin")}
+                sx={{
+                  color: "#666666",
+                  textTransform: "none",
+                  fontWeight: 500,
+                  fontSize: "0.95rem",
+                  fontFamily,
+                  "&:hover": { backgroundColor: "#f5f5f4", color: "#1a1a1a" },
+                }}
+              >
+                Sign in
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => handleNavigation("/auth/signup")}
+                sx={{
+                  color: "#ffffff",
+                  backgroundColor: "#1a1a1a",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: "0.95rem",
+                  fontFamily,
+                  px: 2.5,
+                  borderRadius: "7px",
+                  "&:hover": { backgroundColor: "#333333" },
+                }}
+              >
+                Get started
+              </Button>
             </Box>
           )}
 
-          {/* Mobile Menu Button */}
           {isMobile && (
             <IconButton
               color="inherit"
               aria-label="open drawer"
               edge="start"
-              onClick={handleDrawerToggle}
-              sx={{
-                color: "whitesmoke",
-                "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                },
-              }}
+              onClick={() => setMobileOpen(!mobileOpen)}
+              sx={{ color: "#1a1a1a" }}
             >
               <MenuIcon />
             </IconButton>
@@ -171,22 +151,18 @@ export default function LandingNav() {
         </Toolbar>
       </Container>
 
-      {/* Mobile Drawer */}
       <Drawer
         variant="temporary"
         anchor="right"
         open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Better open performance on mobile.
-        }}
+        onClose={() => setMobileOpen(false)}
+        ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": {
             boxSizing: "border-box",
             width: 250,
-            backgroundColor: "rgba(0, 0, 0, 0.9)",
-            backdropFilter: "blur(10px)",
+            backgroundColor: "#ffffff",
             border: "none",
           },
         }}

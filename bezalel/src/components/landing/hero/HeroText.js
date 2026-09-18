@@ -1,17 +1,25 @@
 import { Typography, Stack } from "@mui/material";
 
+const fontFamily =
+  "'Poppins', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
 export default function HeroText() {
   return (
-    <Stack spacing={3} alignItems="center" sx={{ py: { xs: 8, md: 12 }, maxWidth: 820, mx: "auto" }}>
+    <Stack
+      spacing={3}
+      alignItems="center"
+      sx={{ py: { xs: 6, md: 8 }, maxWidth: 780, mx: "auto" }}
+    >
       <Typography
         component="h1"
         textAlign="center"
         sx={{
-          fontSize: { xs: "40px", sm: "56px", md: "72px", lg: "84px" },
-          lineHeight: { xs: "46px", sm: "62px", md: "80px", lg: "92px" },
-          fontWeight: 700,
-          letterSpacing: "-0.03em",
-          color: "#f5f5f2",
+          fontSize: { xs: "38px", sm: "52px", md: "64px", lg: "72px" },
+          lineHeight: { xs: "44px", sm: "58px", md: "70px", lg: "78px" },
+          fontWeight: 800,
+          letterSpacing: "-0.02em",
+          color: "#1a1a1a",
+          fontFamily,
         }}
       >
         Your AI Business Co-Founder
@@ -20,10 +28,11 @@ export default function HeroText() {
       <Typography
         textAlign="center"
         sx={{
-          fontSize: { xs: "18px", sm: "20px", md: "24px" },
+          fontSize: { xs: "18px", sm: "20px", md: "22px" },
           lineHeight: 1.5,
           fontWeight: 400,
-          color: "#b8b8b0",
+          color: "#666666",
+          fontFamily,
         }}
       >
         For solo operators who are good at building products.
@@ -32,11 +41,12 @@ export default function HeroText() {
       <Typography
         textAlign="center"
         sx={{
-          fontSize: { xs: "15px", sm: "17px" },
+          fontSize: { xs: "15px", sm: "16px" },
           lineHeight: 1.7,
           fontWeight: 400,
-          color: "#8a8a84",
-          maxWidth: 620,
+          color: "#999999",
+          maxWidth: 600,
+          fontFamily,
         }}
       >
         Bezalel helps research your business, find opportunities, and handle
