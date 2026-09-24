@@ -1,7 +1,8 @@
+import { withAuth } from "@/app/lib/withAuth";
 import { NextResponse } from "next/server";
 import { generateCanvasSegment } from "@/app/lib/services/llmService";
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
     const { title, context, ideas } = await request.json();
 
@@ -35,3 +36,5 @@ Return valid JSON only:
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const POST = withAuth(handlePOST);

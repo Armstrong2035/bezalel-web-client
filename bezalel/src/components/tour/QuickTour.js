@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
 import {
   Box,
   Button,

@@ -1,3 +1,4 @@
+import { withAuth } from "@/app/lib/withAuth";
 import { NextResponse } from "next/server";
 import { createDocument, listDocuments } from "@/app/lib/services/documentService";
 
@@ -5,7 +6,7 @@ import { createDocument, listDocuments } from "@/app/lib/services/documentServic
  * GET /api/documents?userId=xxx
  * Returns all documents for the given user, newest first.
  */
-export async function GET(request) {
+async function handleGET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
@@ -27,7 +28,7 @@ export async function GET(request) {
  * Body: { userId, title? }
  * Creates a new document and returns it.
  */
-export async function POST(request) {
+async function handlePOST(request) {
   try {
     const { userId, title } = await request.json();
 
@@ -42,3 +43,7 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const GET = withAuth(handleGET);
+
+export const POST = withAuth(handlePOST);

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { apiFetch } from "@/firebase/apiFetch";
+
+import { useEffect, useState } from "react";
+import Link from "@/components/loading/NavigationLink";
+import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
 import { canvasSections } from "@/app/segments/canvasSection";
 import { useDocumentStore } from "@/stores/documentStore";
 import { useAuth } from "@/app/hooks/useAuth";
-import { StudioNavigation } from "@/components/studio/StudioApp";
+import { StudioNavigation } from "@/components/studio/StudioNavigation";
 
 /**
  * Left sidebar for the document view.
@@ -22,33 +24,49 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
   const { user } = useAuth();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(docTitle || "Untitled");
+  const [error, setError] = useState("");
+  const [creating, setCreating] = useState(false);
+  useEffect(() => { setTitleDraft(docTitle || "Untitled"); }, [docId, docTitle]);
   const updateDocument = useDocumentStore((state) => state.updateDocument);
   const addDocument = useDocumentStore((state) => state.addDocument);
 
   const handleTitleBlur = async () => {
     setIsEditingTitle(false);
     const trimmed = titleDraft.trim();
-    if (!trimmed) return;
-    updateDocument(docId, { title: trimmed });
-    await fetch(`/api/documents/${docId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user?.uid, title: trimmed }),
-    });
+    if (!trimmed || trimmed === docTitle) { setTitleDraft(docTitle || "Untitled"); return; }
+    setError("");
+    try {
+      const response = await apiFetch(`/api/documents/${docId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user?.uid, title: trimmed }),
+      });
+      if (!response.ok) throw new Error("Could not save the title. Please retry.");
+      updateDocument(docId, { title: trimmed });
+    } catch (err) {
+      setTitleDraft(docTitle || "Untitled");
+      setError(err.message);
+    }
   };
 
   const handleNewDoc = async () => {
-    if (!user?.uid) return;
-    const res = await fetch("/api/documents", {
+    if (!user?.uid || creating) return;
+    setCreating(true);
+    setError("");
+    try {
+    const res = await apiFetch("/api/documents", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.uid, title: "Untitled" }),
     });
+    if (!res.ok) throw new Error("Could not create the document. Please retry.");
     if (res.ok) {
       const { document } = await res.json();
       addDocument(document);
       router.push(`/document/${document.id}`);
     }
+    } catch (err) { setError(err.message); }
+    finally { setCreating(false); }
   };
 
   return (
@@ -86,6 +104,7 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
       </div>
 
       {/* Editable doc title */}
+      {error && <p role="alert" style={{ color: "#b91c1c", padding: "0 16px", fontSize: 12 }}>{error}</p>}
       <div style={{ padding: "12px 16px 8px" }}>
         <div
           style={{

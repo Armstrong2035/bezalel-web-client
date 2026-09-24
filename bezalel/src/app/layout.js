@@ -1,14 +1,6 @@
-import { Inter } from "next/font/google";
 import AppProviders from "./hooks/AppProviders";
 import LoadingWrapper from "@/components/LoadingWrapper";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-  variable: "--font-inter",
-});
 
 export const metadata = {
   title: "Bezalel — Your AI Business Co-Founder",
@@ -71,13 +63,10 @@ export default function RootLayout({ children }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="format-detection" content="telephone=no" />
       </head>
-      <body
-        className={inter.className}
-        style={{ backgroundColor: "#ffffff", padding: 0, margin: 0 }}
-      >
-        <AppProviders>
-          <LoadingWrapper>{children}</LoadingWrapper>
-        </AppProviders>
+      <body style={{ backgroundColor: "#ffffff", padding: 0, margin: 0 }}>
+        <LoadingWrapper>
+          <AppProviders>{children}</AppProviders>
+        </LoadingWrapper>
       </body>
     </html>
   );

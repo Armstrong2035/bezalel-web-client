@@ -1,7 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useRef, useState } from "react";
+import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
+import dynamic from "next/dynamic";
+import { StudioNavigation } from "./StudioNavigation";
+import LoadingState from "@/components/loading/LoadingState";
+
+const OpportunityView = dynamic(() => import("./OpportunityView"), { loading: () => <LoadingState compact label="Loading opportunities..." /> });
 
 const businessDocuments = [
   { id: "poysis-model", title: "Poysis", goal: "Find and validate a daily research-inbox habit for business people and creatives." },
@@ -65,12 +70,6 @@ const initialInbox = [
   },
 ];
 
-const navGroups = [
-  [{ id: "inbox", label: "Inbox" }, { id: "drafts", label: "Drafts" }, { id: "published", label: "Published" }],
-  [{ id: "projects", label: "Projects" }, { id: "automations", label: "Automations" }, { id: "sources", label: "Data Sources" }],
-  [{ id: "settings", label: "Settings" }],
-];
-
 const actionLabels = {
   write_post: "Create SEO Brief",
   create_carousel: "Create Carousel Brief",
@@ -78,7 +77,7 @@ const actionLabels = {
   research_deeper: "Research Deeper",
 };
 
-export default function StudioApp({ document, onOpenBusinessModel, hideSidebar = false, activeView, onViewChange }) {
+export default function StudioApp({ document, onOpenBusinessModel, hideSidebar = false, activeView, onViewChange, canvasIdeas = [] }) {
   const router = useRouter();
   const [internalView, setInternalView] = useState(document ? "inbox" : "home");
   const view = activeView ?? internalView;
@@ -96,7 +95,6 @@ export default function StudioApp({ document, onOpenBusinessModel, hideSidebar =
   const [job, setJob] = useState(null);
   const [drafts, setDrafts] = useState([]);
   const [published, setPublished] = useState([]);
-  const [marketingConnection, setMarketingConnection] = useState({ status: "idle", message: "" });
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
 
@@ -108,28 +106,6 @@ export default function StudioApp({ document, onOpenBusinessModel, hideSidebar =
     const haystack = `${item.title} ${item.summary} ${item.category}`.toLowerCase();
     return item.document?.id === activeBusinessId && matchesFilter && haystack.includes(search.toLowerCase());
   }), [activeBusinessId, filter, items, search]);
-
-  const checkMarketingConnection = useCallback(async () => {
-    setMarketingConnection({ status: "checking", message: "" });
-    try {
-      const response = await fetch("/api/marketing?resource=rules", { cache: "no-store" });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? "Poysis could not load marketing data.");
-      const rules = Array.isArray(payload.data) ? payload.data : payload.data?.data ?? [];
-      setMarketingConnection({
-        status: "connected",
-        message: String(rules.length) + " saved " + (rules.length === 1 ? "rule" : "rules") + " available",
-      });
-    } catch (error) {
-      setMarketingConnection({ status: "error", message: error.message });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (view === "sources" && marketingConnection.status === "idle") {
-      checkMarketingConnection();
-    }
-  }, [view, marketingConnection.status, checkMarketingConnection]);
 
   const openBusiness = (businessId) => {
     setActiveBusinessId(businessId);
@@ -235,7 +211,7 @@ export default function StudioApp({ document, onOpenBusinessModel, hideSidebar =
         {view === "published" && <ArtifactList label="Published" artifacts={published.filter((artifact) => artifact.documentId === activeBusinessId)} empty="Nothing has been published yet. Approval always comes first." />}
         {view === "projects" && <ProjectsView />}
         {view === "automations" && <AutomationsView />}
-        {view === "sources" && <SourcesView connection={marketingConnection} onRefresh={checkMarketingConnection} />}
+        {view === "sources" && <OpportunityView key={document?.id ?? "preview"} documentId={document?.id} initialForm={document?.opportunityForm} canvasIdeas={canvasIdeas} />}
         {view === "settings" && <SettingsView />}
         {view === "business" && <BusinessBridge router={router} onOpenBusinessModel={onOpenBusinessModel} />}
       </main>
@@ -246,40 +222,6 @@ export default function StudioApp({ document, onOpenBusinessModel, hideSidebar =
 function StudioSidebar({ view, setView, activeBusiness, openHome }) {
   return <aside className="studio-sidebar" style={styles.sidebar}><button onClick={openHome} style={styles.brand}>BEZALEL</button><button onClick={openHome} style={{ ...styles.navItem, ...(view === "home" ? styles.navActive : {}) }}>Home</button><StudioNavigation view={view} setView={setView} documentTitle={activeBusiness?.title} /><div style={styles.sidebarFoot}><span style={styles.dot} />3 new opportunities</div></aside>;
 }
-
-export function StudioNavigation({ view, setView, onOpen }) {
-  const chooseView = (nextView) => {
-    onOpen?.();
-    setView(nextView);
-  };
-
-  return <div style={studioTreeStyles.tree}>
-    <button onClick={() => chooseView("inbox")} style={studioTreeStyles.parent}>
-      <span style={studioTreeStyles.branch}>⌄</span>
-      Validation Studio
-    </button>
-    <div style={studioTreeStyles.children}>
-      {navGroups.flat().map((item) => (
-        <button
-          key={item.id}
-          onClick={() => chooseView(item.id)}
-          style={{ ...studioTreeStyles.child, ...(view === item.id ? studioTreeStyles.childActive : {}) }}
-        >
-          {item.label}
-        </button>
-      ))}
-    </div>
-  </div>;
-}
-
-const studioTreeStyles = {
-  tree: { margin: "8px 0 4px" },
-  parent: { display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "7px 8px", border: "none", borderRadius: 4, background: "transparent", color: "#252523", textAlign: "left", font: "inherit", fontSize: 13, fontWeight: 700, cursor: "pointer" },
-  branch: { color: "#8a8a84", fontSize: 14, lineHeight: 1 },
-  children: { marginLeft: 14, paddingLeft: 10, borderLeft: "1px solid #dddeda", display: "grid", gap: 1 },
-  child: { width: "100%", padding: "6px 8px", border: "none", borderRadius: 4, background: "transparent", color: "#6e6e69", textAlign: "left", font: "inherit", fontSize: 12, cursor: "pointer" },
-  childActive: { background: "#e9e9e4", color: "#222", fontWeight: 700 },
-};
 
 function HomeView({ businesses: allBusinesses, items, openBusiness }) {
   return <section style={homeStyles.home}><p style={homeStyles.homeIntro}>Choose a business to see research, create content, and learn what to do next.</p><div style={homeStyles.businessGrid}>{allBusinesses.map((business) => { const unread = items.filter((item) => item.document?.id === business.id && item.status === "unread").length; return <button key={business.id} onClick={() => openBusiness(business.id)} style={homeStyles.businessCard}><span style={styles.itemCategory}>{unread ? `${unread} NEW OPPORTUNIT${unread === 1 ? "Y" : "IES"}` : "UP TO DATE"}</span><h2>{business.title}</h2><p>{business.idea}</p><div style={homeStyles.businessGoal}><span>Current validation goal</span><strong>{business.priority}</strong></div><span style={homeStyles.openBusiness}>Open workspace →</span></button>; })}</div><button style={{ ...styles.secondaryButton, marginTop: 24 }}>+ New business</button></section>;
@@ -337,25 +279,9 @@ function EmptyInbox() { return <div style={styles.empty}><h3>Nothing worth bothe
 function ArtifactList({ label, artifacts, empty }) { return <section style={styles.module}><p style={styles.eyebrow}>{label.toUpperCase()}</p>{artifacts.length ? artifacts.map((artifact) => <article key={artifact.id} style={styles.artifact}><span style={styles.artifactType}>{artifact.type}</span><div><h3>{artifact.title}</h3><p>{artifact.status} · {artifact.createdAt}</p></div></article>) : <div style={styles.empty}><h3>{empty}</h3></div>}</section>; }
 function ProjectsView() { return <section style={styles.module}><p style={styles.eyebrow}>PROJECTS</p>{["Poysis", "Christian Content", "Bezalel", "Chess Product"].map((project) => <article key={project} style={styles.project}><h3>{project}</h3><p>Research, replies, and content are kept in this context.</p></article>)}</section>; }
 function AutomationsView() { return <section style={styles.module}><p style={styles.eyebrow}>AUTOMATIONS</p><article style={styles.rule}><h3>Christian Video</h3><p><strong>When</strong> I create a video from Christian research</p><p><strong>Use</strong> Armstrong Main · Anime · 60 seconds</p><p><strong>Approval</strong> Always ask</p></article></section>; }
-function SourcesView({ connection, onRefresh }) {
-  const statusLabel = connection.status === "checking" ? "Checking…" : connection.status === "connected" ? "Connected" : connection.status === "error" ? "Needs attention" : "Not checked";
-  const statusColor = connection.status === "connected" ? "#2f7d52" : connection.status === "error" ? "#a24242" : "#999";
-  return <section style={styles.module}>
-    <p style={styles.eyebrow}>DATA SOURCES</p>
-    <h2 style={{ margin: "0 0 8px", fontSize: 22 }}>Marketing signals, explained.</h2>
-    <p style={{ maxWidth: 580, color: "#666", lineHeight: 1.65, margin: "0 0 24px" }}>Poysis supplies the evidence behind daily validation briefs. Bezalel keeps the brief, your business-model context, and every action branch together in this document.</p>
-    <article style={styles.source}><span><strong>Poysis Marketing API</strong><small style={{ display: "block", color: "#888", marginTop: 4 }}>Rules, opportunities, and imported Keyword Planner reports</small></span><span style={{ color: statusColor, fontWeight: 700 }}>{statusLabel}</span></article>
-    <article style={styles.source}><span>Keyword Planner</span><span style={{ color: "#777" }}>Imported reports</span></article>
-    <article style={styles.source}><span>Search Console</span><span style={{ color: "#777" }}>Ready when connected</span></article>
-    <article style={styles.source}><span>GA4</span><span style={{ color: "#777" }}>Ready when connected</span></article>
-    {connection.message && <p style={{ ...styles.muted, color: connection.status === "error" ? "#a24242" : "#6a6a64" }}>{connection.message}</p>}
-    <button onClick={onRefresh} disabled={connection.status === "checking"} style={{ ...styles.secondaryButton, marginTop: 16 }}>{connection.status === "checking" ? "Checking connection…" : "Check Poysis connection"}</button>
-    <div style={{ marginTop: 34, paddingTop: 20, borderTop: "1px solid #e6e6e0", color: "#62625c", fontSize: 13, lineHeight: 1.65 }}><strong>Where this goes next</strong><p>A research target runs daily, creates an evidence-backed brief in Inbox, then branches into SEO, carousel, video, or deeper research—only when you choose.</p></div>
-  </section>;
-}
 function SettingsView() { return <section style={styles.module}><p style={styles.eyebrow}>SETTINGS</p><article style={styles.rule}><h3>Armstrong Main</h3><p>Reflective · Conversational · Story-driven</p><p>Anime · 45–60 seconds · 9:16 · Captions on</p><p><strong>Approval:</strong> Always required</p></article></section>; }
 function BusinessBridge({ router, onOpenBusinessModel }) { return <section style={styles.module}><p style={styles.eyebrow}>BUSINESS MODEL</p><h2 style={styles.readTitle}>Your model shapes this document’s research.</h2><p style={{ color: "#666", maxWidth: 580, lineHeight: 1.7 }}>The customer, problem, value proposition, channels, and priorities in this canvas determine what belongs in this validation inbox.</p><button onClick={onOpenBusinessModel ?? (() => router.push("/documents"))} style={{ ...styles.primaryButton, marginTop: 24 }}>Open Business Model</button></section>; }
-function titleFor(view) { return ({ inbox: "Inbox", drafts: "Drafts", published: "Published", projects: "Projects", business: "Business Model", automations: "Automations", sources: "Data Sources", settings: "Settings" })[view] ?? "Inbox"; }
+function titleFor(view) { return ({ inbox: "Inbox", drafts: "Drafts", published: "Published", projects: "Projects", business: "Business Model", automations: "Automations", sources: "Opportunities", settings: "Settings" })[view] ?? "Inbox"; }
 
 const briefActionStyles = {
   panel: { margin: "0 46px 56px", padding: "20px", border: "1px solid #dfe5de", borderRadius: 9, background: "#f8fbf8" },

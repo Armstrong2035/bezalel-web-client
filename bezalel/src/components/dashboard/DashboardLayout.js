@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "@/components/loading/NavigationLink";
 import { styled, useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import MuiDrawer from "@mui/material/Drawer";
@@ -164,7 +165,7 @@ export default function DashboardLayout({ children }) {
           {dashboardItems.map((item) => (
             <ListItem key={item.title} disablePadding sx={{ display: "block" }}>
               <ListItemButton
-                component="a"
+                component={Link}
                 href={item.link}
                 sx={{
                   minHeight: 48,

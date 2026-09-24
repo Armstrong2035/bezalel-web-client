@@ -1,3 +1,4 @@
+import { withAuth } from "@/app/lib/withAuth";
 import { NextResponse } from "next/server";
 import { researchIdea } from "@/app/lib/services/researchService";
 import { saveIdeaResearch } from "@/app/lib/services/documentService";
@@ -15,7 +16,7 @@ import { saveIdeaResearch } from "@/app/lib/services/documentService";
  *                                for the reasoning chain (optional but recommended)
  * }
  */
-export async function POST(request) {
+async function handlePOST(request) {
   try {
     const {
       userId,
@@ -48,7 +49,8 @@ export async function POST(request) {
     console.log(`[research] Starting for ideaId=${ideaId}, title="${idea.title}"`);
 
     // Pass full document snapshot so reasoning chain can analyse canvas fit
-    const research = await researchIdea(idea, context, documentSnapshot ?? null);
+    const research = await researchIdea(idea, context, documentSnapshot ?? null,
+      AbortSignal.any([request.signal, AbortSignal.timeout(120_000)]));
 
     console.log(`[research] Completed. Verdict: ${research.verdict}`);
 
@@ -58,8 +60,6 @@ export async function POST(request) {
     const { buildCanvasReasoning } = await import("@/app/lib/engines/canvasEngine/canvasReasoning");
     let reasoningSteps = [];
     if (documentSnapshot) {
-      const { parseReasoningStepsExport } = await import("@/app/api/chat/route");
-      // parseReasoningSteps is not exported — rebuild inline for research
       const raw = buildCanvasReasoning(documentSnapshot);
       reasoningSteps = raw
         .split("\n")
@@ -82,3 +82,5 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const POST = withAuth(handlePOST);

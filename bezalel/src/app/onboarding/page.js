@@ -24,7 +24,7 @@ import {
   Info,
   HelpOutline,
 } from "@mui/icons-material";
-import { useRouter } from "next/navigation";
+import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
 import Heading from "@/components/onboarding/Heading";
 import ProgressBar from "@/components/onboarding/ProgressBar";
 import QuestionCard from "@/components/onboarding/QuestionCard";

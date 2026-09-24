@@ -1,0 +1,56 @@
+.overlay {
+  position: fixed; inset: 0; z-index: 2147483647;
+  display: grid; place-items: center; overflow: auto; padding: 32px 20px;
+  background: radial-gradient(ellipse at 50% 44%, rgba(246, 249, 231, .83), rgba(247, 247, 242, .7) 65%);
+  backdrop-filter: blur(14px) saturate(.45); -webkit-backdrop-filter: blur(14px) saturate(.45);
+  color: #20231e; cursor: progress; outline: none;
+  animation: veil-in 180ms ease-out both;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+.revealing { animation: veil-out 240ms ease-in both; pointer-events: auto; }
+.composition { width: min(100%, 460px); text-align: center; animation: enter 350ms cubic-bezier(.2,.8,.2,1) both; }
+.signature { display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .19em; }
+.brandMark { display: inline-grid; place-items: center; width: 25px; height: 25px; background: #23271e; border-radius: 7px; color: #dcf488; letter-spacing: -.08em; padding-right: 2px; font-size: 19px; }
+.stage { height: 208px; width: 300px; max-width: 100%; margin: 10px auto 4px; position: relative; isolation: isolate; }
+.orbit { position: absolute; width: 230px; height: 95px; border: 1px solid rgba(90, 111, 53, .15); border-radius: 50%; left: 35px; top: 78px; transform: rotate(-18deg); }
+.roller { position: absolute; left: calc(50% - 75px); top: 68px; width: 150px; height: 78px; transform-origin: 50% 65%; animation: rolling 1900ms cubic-bezier(.45,0,.55,1) infinite; }
+.barrel { position: absolute; inset: 0 8px; overflow: hidden; border: 2px solid #2b3320; border-radius: 32px;
+  background: linear-gradient(180deg, #eeffbd 0%, #d9f77e 22%, #b9d959 75%, #a1be4c 100%);
+  box-shadow: inset 0 3px 0 rgba(255,255,255,.8), inset 0 -7px 9px rgba(63,79,26,.18), 0 4px 0 rgba(43,51,32,.1); }
+.ridges { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 17px, rgba(77,99,25,.13) 18px, rgba(255,255,255,.35) 19px, transparent 20px 24px); }
+.handle { position: absolute; top: 26px; width: 26px; height: 27px; border-radius: 9px; background: linear-gradient(#4b523f, #252b20); border: 2px solid #252b20; }
+.handleLeft { left: -13px; transform: rotate(-7deg); }
+.handleRight { right: -13px; transform: rotate(7deg); }
+.face { position: absolute; display: flex; gap: 15px; left: 42px; top: 28px; animation: look 1900ms ease-in-out infinite; }
+.face i { width: 8px; height: 12px; border-radius: 5px; background: #253019; box-shadow: inset 2px 2px rgba(0,0,0,.2); animation: blink 3800ms infinite; }
+.shine { position: absolute; top: 10px; left: 21px; width: 39px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.7); transform: rotate(-4deg); }
+.shadow { position: absolute; width: 108px; height: 13px; border-radius: 50%; left: calc(50% - 54px); top: 160px; background: rgba(47,61,24,.16); filter: blur(6px); animation: shadow 1900ms ease-in-out infinite; }
+.spark { position: absolute; font-family: system-ui, sans-serif; font-weight: 400; color: #7a914d; animation: sparkle 1900ms ease-in-out infinite; }
+.sparkOne { left: 32px; top: 41px; font-size: 25px; }
+.sparkTwo { right: 25px; top: 109px; font-size: 23px; animation-delay: -950ms; }
+.trail { position: absolute; right: 39px; top: 66px; width: 5px; height: 5px; background: #a9bc76; border-radius: 50%; box-shadow: 9px -8px 0 -1px #b7c899; }
+.eyebrow { display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 10px; letter-spacing: .16em; font-weight: 700; color: #758064; }
+.eyebrow > span { width: 5px; height: 5px; background: #8fa954; border-radius: 50%; }
+.title { margin: 12px 0 9px; font-size: clamp(25px, 5vw, 34px); line-height: 1.18; font-weight: 650; letter-spacing: -.055em; }
+.description { color: #767b6e; font-size: 13px; line-height: 1.6; min-height: 42px; max-width: 330px; margin: 0 auto; }
+.track { width: 92px; height: 3px; border-radius: 3px; overflow: hidden; background: rgba(117,135,81,.16); margin: 19px auto 0; }
+.track > span { display: block; height: 100%; width: 35px; background: #728744; border-radius: inherit; animation: glide 1400ms ease-in-out infinite; }
+.footer { position: absolute; bottom: 28px; left: 20px; right: 20px; text-align: center; color: #919687; font-size: 10px; letter-spacing: .025em; }
+.recovery { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 24px; }
+.recovery button { padding: 9px 13px; border: 1px solid #c3cbb6; border-radius: 8px; background: #fbfcf7; font: inherit; font-size: 12px; color: #3c4630; cursor: pointer; }
+.recovery button:first-child { background: #293220; color: #eff9d6; border-color: #293220; }
+@keyframes rolling { 0%,100% { transform: translate(-30px, 0) rotate(-18deg); } 50% { transform: translate(30px, -9px) rotate(18deg); } }
+@keyframes shadow { 0%,100% { transform: translateX(-25px) scale(1); opacity: .7; } 50% { transform: translateX(25px) scale(.82); opacity: .4; } }
+@keyframes look { 0%,100% { transform: translateX(-3px); } 50% { transform: translateX(3px); } }
+@keyframes blink { 0%,43%,49%,100% { transform: scaleY(1); } 46% { transform: scaleY(.15); } }
+@keyframes sparkle { 0%,100% { transform: rotate(-15deg) scale(.8); opacity: .35; } 50% { transform: rotate(20deg) scale(1); opacity: .9; } }
+@keyframes glide { 0%,100% { transform: translateX(-36px); } 50% { transform: translateX(92px); } }
+@keyframes enter { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes veil-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes veil-out { from { opacity: 1; } to { opacity: 0; } }
+@media (max-height: 570px) { .stage { height: 180px; margin-top: 0; } .footer { display: none; } .signature { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .overlay, .composition, .roller, .shadow, .face, .face i, .spark, .track > span { animation: none; }
+  .revealing { opacity: 0; transition: opacity 150ms linear; }
+}
+@supports not (backdrop-filter: blur(1px)) { .overlay { background: rgba(247,248,241,.97); } }

@@ -10,7 +10,13 @@ import { create } from "zustand";
 const useDocumentStore = create((set, get) => ({
   // All documents belonging to the current user
   documents: [],
-  setDocuments: (docs) => set({ documents: docs }),
+  documentsLoaded: false,
+  setDocuments: (docs) => set({ documents: docs, documentsLoaded: true }),
+  upsertDocument: (doc) => set((state) => ({
+    documents: state.documents.some((item) => item.id === doc.id)
+      ? state.documents.map((item) => item.id === doc.id ? doc : item)
+      : [...state.documents, doc],
+  })),
   addDocument: (doc) =>
     set((state) => ({ documents: [doc, ...state.documents] })),
   updateDocument: (id, updates) =>

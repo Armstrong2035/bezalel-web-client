@@ -1,12 +1,30 @@
+import { withAuth } from "@/app/lib/withAuth";
 import { NextResponse } from "next/server";
-import { updateDocument, deleteDocument } from "@/app/lib/services/documentService";
+import { updateDocument, deleteDocument, getDocument, getDocumentCanvasIdeas } from "@/app/lib/services/documentService";
+
+async function handleGET(request, { params }) {
+  try {
+    const { docId } = await params;
+    const userId = new URL(request.url).searchParams.get("userId");
+    if (!userId) return NextResponse.json({ error: "userId is required" }, { status: 400 });
+    const [document, ideas] = await Promise.all([
+      getDocument(userId, docId),
+      getDocumentCanvasIdeas(userId, docId),
+    ]);
+    if (!document) return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    return NextResponse.json({ document, ideas }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    console.error("GET document failed:", error);
+    return NextResponse.json({ error: "Could not load the saved document. Please retry." }, { status: 500 });
+  }
+}
 
 /**
  * PATCH /api/documents/[docId]
  * Body: { userId, title }
  * Updates the title (or other metadata) of a document.
  */
-export async function PATCH(request, { params }) {
+async function handlePATCH(request, { params }) {
   try {
     const { docId } = await params;
     const { userId, ...updates } = await request.json();
@@ -28,7 +46,7 @@ export async function PATCH(request, { params }) {
  * Body: { userId }
  * Deletes the document and all its canvasSegments.
  */
-export async function DELETE(request, { params }) {
+async function handleDELETE(request, { params }) {
   try {
     const { docId } = await params;
     const { userId } = await request.json();
@@ -44,3 +62,9 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const GET = withAuth(handleGET);
+
+export const PATCH = withAuth(handlePATCH);
+
+export const DELETE = withAuth(handleDELETE);

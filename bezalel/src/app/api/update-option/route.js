@@ -1,3 +1,4 @@
+import { withAuth } from "@/app/lib/withAuth";
 import {
   deleteIdeaFromDocument,
   updateIdeaDecision,
@@ -10,7 +11,7 @@ import { NextResponse } from "next/server";
  * Body: { userId, documentId, ideaId, decisionStatus, priority? }
  * Saves an idea's decision state and, for "now" ideas, its execution priority.
  */
-export async function PATCH(request) {
+async function handlePATCH(request) {
   try {
     const { userId, documentId, ideaId, accepted, decisionStatus, priority } =
       await request.json();
@@ -63,7 +64,7 @@ export async function PATCH(request) {
  * Body: { userId, documentId, ideaId }
  * Permanently deletes a single idea from a document's canvasSegments.
  */
-export async function DELETE(request) {
+async function handleDELETE(request) {
   try {
     const { userId, documentId, ideaId } = await request.json();
 
@@ -81,3 +82,7 @@ export async function DELETE(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const PATCH = withAuth(handlePATCH);
+
+export const DELETE = withAuth(handleDELETE);

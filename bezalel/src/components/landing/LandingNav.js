@@ -15,27 +15,25 @@ import {
 } from "@mui/material";
 import { Menu as MenuIcon } from "@mui/icons-material";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "@/components/loading/NavigationLink";
 
 const fontFamily =
   "'Poppins', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 export default function LandingNav() {
-  const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleNavigation = (href) => {
-    router.push(href);
-    setMobileOpen(false);
-  };
 
   const drawer = (
     <Box sx={{ width: 250, pt: 2 }}>
       <List>
         <ListItem
-          onClick={() => handleNavigation("/auth/signin")}
+          component={Link}
+          href="/auth/signin"
+          prefetch={true}
+          onNavigate={() => setMobileOpen(false)}
           sx={{ cursor: "pointer", "&:hover": { backgroundColor: "#f5f5f4" } }}
         >
           <ListItemText
@@ -51,7 +49,10 @@ export default function LandingNav() {
           />
         </ListItem>
         <ListItem
-          onClick={() => handleNavigation("/auth/signup")}
+          component={Link}
+          href="/auth/signup"
+          prefetch={true}
+          onNavigate={() => setMobileOpen(false)}
           sx={{ cursor: "pointer", "&:hover": { backgroundColor: "#f5f5f4" } }}
         >
           <ListItemText
@@ -85,8 +86,9 @@ export default function LandingNav() {
           }}
         >
           <Box
-            onClick={() => handleNavigation("/")}
-            sx={{ cursor: "pointer", "&:hover": { opacity: 0.7 } }}
+            component={Link}
+            href="/"
+            sx={{ cursor: "pointer", textDecoration: "none", "&:hover": { opacity: 0.7 } }}
           >
             <Typography
               variant="h6"
@@ -105,7 +107,10 @@ export default function LandingNav() {
           {!isMobile && (
             <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
               <Button
-                onClick={() => handleNavigation("/auth/signin")}
+                component={Link}
+          href="/auth/signin"
+          prefetch={true}
+          onNavigate={() => setMobileOpen(false)}
                 sx={{
                   color: "#666666",
                   textTransform: "none",
@@ -119,7 +124,10 @@ export default function LandingNav() {
               </Button>
               <Button
                 variant="contained"
-                onClick={() => handleNavigation("/auth/signup")}
+                component={Link}
+          href="/auth/signup"
+          prefetch={true}
+          onNavigate={() => setMobileOpen(false)}
                 sx={{
                   color: "#ffffff",
                   backgroundColor: "#1a1a1a",

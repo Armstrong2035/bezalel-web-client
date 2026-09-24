@@ -301,6 +301,16 @@ function IdeaCard({
   onDelete,
   onResearch,
 }) {
+  const [pendingAction, setPendingAction] = useState(null);
+  const [actionError, setActionError] = useState(null);
+  const runMutation = async (label, action) => {
+    if (pendingAction) return;
+    setPendingAction(label);
+    setActionError(null);
+    try { await action(); }
+    catch (error) { setActionError(error.message || "Could not save. Please retry."); }
+    finally { setPendingAction(null); }
+  };
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [activeTab, setActiveTab] = useState("plan"); // "plan" | "assumptions" | "research"
@@ -399,11 +409,51 @@ function IdeaCard({
           >
             {idea.description}
           </p>
+          {idea.research && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 7,
+                marginTop: 9,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.03em",
+                color: "#287c2f",
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: "4px 7px",
+                  borderRadius: 999,
+                  background: "#eaf7eb",
+                  border: "1px solid #b8d9ba",
+                }}
+              >
+                <span aria-hidden="true">✓</span> RESEARCHED
+              </span>
+              <span style={{ color: "#666", fontWeight: 600 }}>
+                {idea.research.verdict
+                  ? `${idea.research.verdict[0].toUpperCase()}${idea.research.verdict.slice(1)}`
+                  : "Research complete"}
+                {formatTimestamp(idea.research.fetchedAt)
+                  ? ` · ${formatTimestamp(idea.research.fetchedAt)}`
+                  : ""}
+              </span>
+            </div>
+          )}
         </div>
 
+        {pendingAction && <span role="status" style={{ fontSize: 12 }}>{pendingAction}</span>}
+        {actionError && <span role="alert" style={{ color: "#b91c1c", fontSize: 12 }}>{actionError}</span>}
         <select
           value={decisionStatus}
-          onChange={(event) => onDecisionChange(event.target.value)}
+          disabled={!!pendingAction}
+          onChange={(event) => { const status = event.target.value; runMutation("Saving decision...", () => onDecisionChange(status)); }}
           title="Set decision status"
           style={{
             flexShrink: 0,
@@ -466,7 +516,8 @@ function IdeaCard({
         {confirmDelete ? (
           <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
             <button
-              onClick={handleDelete}
+              disabled={!!pendingAction}
+              onClick={() => runMutation("Deleting idea...", handleDelete)}
               title="Confirm delete"
               style={{
                 padding: "3px 8px",
@@ -581,8 +632,8 @@ function IdeaCard({
           >
             Priority {priorityIndex + 1}
             <button
-              onClick={() => onMovePriority(idea.id, -1)}
-              disabled={priorityIndex === 0}
+              onClick={() => runMutation("Saving priority...", () => onMovePriority(idea.id, -1))}
+              disabled={!!pendingAction || priorityIndex === 0}
               title="Move up"
               style={{
                 border: "1px solid #b8d9ba",
@@ -596,8 +647,8 @@ function IdeaCard({
               ↑
             </button>
             <button
-              onClick={() => onMovePriority(idea.id, 1)}
-              disabled={priorityIndex === nowCount - 1}
+              onClick={() => runMutation("Saving priority...", () => onMovePriority(idea.id, 1))}
+              disabled={!!pendingAction || priorityIndex === nowCount - 1}
               title="Move down"
               style={{
                 border: "1px solid #b8d9ba",

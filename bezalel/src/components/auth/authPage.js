@@ -1,64 +1,25 @@
-// components/auth/authPage.js
-"use client";
-
-import { Grid, Box, Typography, IconButton } from "@mui/material";
-import { typographyStyles } from "../../typographyStyles/typography";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import Link from "next/link";
+import Image from "next/image";
+import Link from "@/components/loading/NavigationLink";
 import GoogleAuthProvider from "./GoogleAuthProvider";
-import EmailAuthProvider from "./EmailAuthProvider";
-import AuthImage from "./AuthImage";
 import Mark from "../../../public/images/logos/Mark.png";
+import styles from "./auth.module.css";
 
-export default function AuthPage({ heading, cta, sidebarInfo }) {
+// The shell renders on the server; only the sign-in action needs hydration.
+export default function AuthPage({ heading, cta }) {
   return (
-    <Box>
-      <Link href="/" style={{ textDecoration: "none" }}>
-        <IconButton
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            fontSize: "2rem",
-            padding: 2,
-          }}
-        >
-          <ArrowBackIcon sx={{ fontSize: "2rem" }} />
-        </IconButton>
+    <main className={styles.page}>
+      <Link href="/" className={styles.back} aria-label="Back to home">
+        <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 12H4m7-7-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2" />
+        </svg>
       </Link>
-      <Grid container sx={{ height: "100vh" }}>
-        <Grid
-          item
-          size={{ xs: 12, md: 8 }}
-          sx={{
-            height: "100%",
-            width: "100%",
-            backgroundColor: "white",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 2,
-          }}
-        >
-          <Typography sx={{ ...typographyStyles.heading }}>
-            {heading}
-          </Typography>
-          <GoogleAuthProvider cta={cta} />
-          {/* <EmailAuthProvider cta={cta} /> */}
-        </Grid>
-        <Grid
-          item
-          size={{ xs: 12, md: 4 }}
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <AuthImage src={Mark} />
-        </Grid>
-      </Grid>
-    </Box>
+      <section className={styles.form} aria-labelledby="auth-heading">
+        <h1 id="auth-heading" className={styles.heading}>{heading}</h1>
+        <GoogleAuthProvider cta={cta} />
+      </section>
+      <aside className={styles.artwork}>
+        <Image src={Mark} alt="Bezalel Logo" width={300} height={300} sizes="300px" className={styles.logo} />
+      </aside>
+    </main>
   );
 }

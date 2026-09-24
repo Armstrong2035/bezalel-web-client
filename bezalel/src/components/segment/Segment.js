@@ -20,7 +20,7 @@ import BookmarksIcon from "@mui/icons-material/Bookmarks";
 import CrisisAlertIcon from "@mui/icons-material/CrisisAlert";
 import React from "react";
 import { Book } from "@mui/icons-material";
-import Link from "next/link";
+import Link from "@/components/loading/NavigationLink";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import CounterBadge from "../ui/CounterBadge";
 

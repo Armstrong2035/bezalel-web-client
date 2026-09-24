@@ -17,13 +17,14 @@ import {
 } from "@mui/material";
 import { ArrowForward } from "@mui/icons-material";
 
-import { useRouter } from "next/navigation";
+import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
 import { canvasSections } from "./canvasSection";
 import CanvasItem from "@/components/segment/canvasItem/CanvasItem";
 import SegmentHeaders from "@/components/segment/SegmentHeader";
 import { useEffect, useState } from "react";
 import { subscribeToCanvasSegments } from "@/firebase/subscribeToCanvasSegment";
 import { useSegmentsStore } from "@/stores/segmentsStore";
+import { useRouteLoading } from "@/app/hooks/useNavigationLoading";
 import { useAuth } from "../hooks/useAuth";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
@@ -32,6 +33,8 @@ export default function Segments() {
   const segments = useSegmentsStore((state) => state.segments);
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { user, loading: authLoading } = useAuth();
+
+  useRouteLoading(authLoading, "Opening your canvas");
 
   const displayName = user ? user.displayName : "User";
   //console.log(segments);

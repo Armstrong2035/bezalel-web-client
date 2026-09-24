@@ -70,8 +70,7 @@ export const updateDocument = async (userId, documentId, updates) => {
 };
 
 /**
- * Deletes a document and all its canvasSegments subcollection.
- * Note: subcollection deletion is done in batches.
+ * Deletes a document and all descendants, including canvas segments and chat.
  *
  * @param {string} userId
  * @param {string} documentId
@@ -85,17 +84,7 @@ export const deleteDocument = async (userId, documentId) => {
     .collection("documents")
     .doc(documentId);
 
-  // Delete subcollection segments first (batch)
-  const segmentsSnapshot = await docRef.collection("canvasSegments").get();
-  const batchSize = segmentsSnapshot.docs.length;
-
-  if (batchSize > 0) {
-    const batch = db.batch();
-    segmentsSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
-    await batch.commit();
-  }
-
-  await docRef.delete();
+  await db.recursiveDelete(docRef);
   return { success: true };
 };
 
@@ -404,19 +393,14 @@ export const loadChatHistory = async (userId, documentId) => {
 export const clearChatHistory = async (userId, documentId) => {
   if (!userId || !documentId) throw new Error("userId and documentId are required");
 
-  const snapshot = await db
+  const chatRef = db
     .collection("users")
     .doc(userId)
     .collection("documents")
     .doc(documentId)
-    .collection("chat")
-    .get();
+    .collection("chat");
 
-  if (!snapshot.empty) {
-    const batch = db.batch();
-    snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-    await batch.commit();
-  }
+  await db.recursiveDelete(chatRef);
 
   await db
     .collection("users")

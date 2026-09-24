@@ -1,5 +1,7 @@
 "use client";
 
+import { apiFetch } from "@/firebase/apiFetch";
+
 import { useState } from "react";
 import { canvasSections } from "@/app/segments/canvasSection";
 
@@ -144,7 +146,7 @@ export default function DocumentExport({ title, context, ideas, variant = "brief
     setIsGeneratingBrief(true);
     setBriefError(null);
     try {
-      const response = await fetch("/api/business-brief", {
+      const response = await apiFetch("/api/business-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, context, ideas }),

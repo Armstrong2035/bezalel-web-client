@@ -1,7 +1,7 @@
 import HeroText from "./HeroText";
 import { Container, Button, Typography, Stack } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { useRouter } from "next/navigation";
+import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
 
 const fontFamily =
   "'Poppins', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";

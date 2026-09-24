@@ -14,8 +14,7 @@ import {
   Box,
 } from "@mui/material";
 import { ArrowForward } from "@mui/icons-material";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/components/loading/NavigationLink";
 import CounterBadge from "@/components/ui/CounterBadge";
 import TipsAndUpdatesIcon from "@mui/icons-material/TipsAndUpdates";
 import BookmarksIcon from "@mui/icons-material/Bookmarks";
@@ -30,8 +29,6 @@ export default function CanvasItem({
   getSegmentData,
   segment,
 }) {
-  const router = useRouter();
-
   const { cards, acceptedCards } = getSegmentData(segment);
 
   //console.log(cards, acceptedCards);
@@ -52,7 +49,6 @@ export default function CanvasItem({
       <Fade in timeout={300 + index * 100}>
         <Card
           elevation={2}
-          onClick={() => router.push(`/segments/${url}`)}
           sx={{
             height: "100%",
             border: "1px solid blue",

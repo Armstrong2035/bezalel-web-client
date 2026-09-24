@@ -1,3 +1,7 @@
+## Project documentation
+
+The runnable Next.js application is in `bezalel/`. Start with [Infrastructure](INFRASTRUCTURE.md) for runtime, authentication, data storage, provider configuration, feature status, and local commands. See [Maintenance](MAINTENANCE.md) for validation and remaining gaps, and [Roadmap](roadmap.md) for planned work.
+
 ## Project Architecture
 
 This project is a modular Next.js web client for Armstrong/Bezalel, structured for scalability and maintainability.

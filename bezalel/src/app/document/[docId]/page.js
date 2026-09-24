@@ -1,7 +1,10 @@
 "use client";
 
+import { apiFetch } from "@/firebase/apiFetch";
+
 import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
+import dynamic from "next/dynamic";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useSegmentsStore } from "@/stores/segmentsStore";
 import { useDocumentStore } from "@/stores/documentStore";
@@ -9,11 +12,14 @@ import { subscribeToDocumentSegments } from "@/firebase/subscribeToDocumentSegme
 import { canvasSections } from "@/app/segments/canvasSection";
 import DocSidebar from "@/components/document/DocSidebar";
 import DocumentSection from "@/components/document/DocumentSection";
-import SectionOptionsPanel from "@/components/document/SectionOptionsPanel";
-import DocumentContext from "@/components/document/DocumentContext";
-import DocChat from "@/components/document/DocChat";
-import DocumentExport from "@/components/document/DocumentExport";
-import StudioApp from "@/components/studio/StudioApp";
+const SectionOptionsPanel = dynamic(() => import("@/components/document/SectionOptionsPanel"), { loading: () => <LoadingState compact label="Loading panel..." /> });
+const DocumentContext = dynamic(() => import("@/components/document/DocumentContext"), { loading: () => <LoadingState compact label="Loading panel..." /> });
+import LoadingState from "@/components/loading/LoadingState";
+import RouteLoading from "@/components/loading/RouteLoading";
+const StudioApp = dynamic(() => import("@/components/studio/StudioApp"), { loading: () => <LoadingState label="Loading studio..." /> });
+
+const DocChat = dynamic(() => import("@/components/document/DocChat"), { loading: () => <LoadingState compact label="Loading panel..." /> });
+const DocumentExport = dynamic(() => import("@/components/document/DocumentExport"), { loading: () => <LoadingState compact label="Loading panel..." /> });
 
 export default function DocumentPage({ params }) {
   const { docId } = use(params);
@@ -21,15 +27,13 @@ export default function DocumentPage({ params }) {
 
   const { user, loading: authLoading } = useAuth();
   const segments = useSegmentsStore((state) => state.segments);
-  const setSegments = useSegmentsStore((state) => state.setSegments);
+  const setSegments = useSegmentsStore((state) => state.replaceSegments);
   const documents = useDocumentStore((state) => state.documents);
-  const setDocuments = useDocumentStore((state) => state.setDocuments);
+  const upsertDocument = useDocumentStore((state) => state.upsertDocument);
   const setActiveDocumentId = useDocumentStore(
     (state) => state.setActiveDocumentId,
   );
-  const setDocumentContext = useDocumentStore(
-    (state) => state.setDocumentContext,
-  );
+
 
   // Which section panel is open — also accepts the special keys "context" and "chat"
   const [openPanelKey, setOpenPanelKey] = useState(null);
@@ -40,11 +44,18 @@ export default function DocumentPage({ params }) {
   // Which segment is regenerating
   const [regeneratingSectionKey, setRegeneratingSectionKey] = useState(null);
   const [exportType, setExportType] = useState(null);
+  const [loadedDocument, setLoadedDocument] = useState(null);
+  const [loadError, setLoadError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [syncError, setSyncError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [loadedKey, setLoadedKey] = useState(null);
+  const documentKey = user?.uid ? `${user.uid}/${docId}` : null;
   const [workspace, setWorkspace] = useState("canvas");
   const [validationView, setValidationView] = useState("inbox");
 
   // ── derived ──────────────────────────────────────────────────────
-  const activeDoc = documents.find((d) => d.id === docId);
+  const activeDoc = documents.find((d) => d.id === docId) ?? loadedDocument;
   const docContext = activeDoc?.context ?? null;
   const hasContext = !!docContext?.idea?.trim();
 
@@ -53,40 +64,58 @@ export default function DocumentPage({ params }) {
     if (!authLoading && !user) router.push("/auth/signin");
   }, [user, authLoading, router]);
 
-  // ── subscribe to this doc's canvas segments ──────────────────────
+  // Hydrate the complete document before rendering or starting live updates.
   useEffect(() => {
     if (!user?.uid || !docId) return;
+    const controller = new AbortController();
+    let active = true;
+    let unsubscribe = () => {};
+    setLoadedKey(null);
+    setLoadedDocument(null);
+    setLoadError("");
+    setSyncError("");
+    setSegments({});
     setActiveDocumentId(docId);
 
-    const unsubscribe = subscribeToDocumentSegments(user.uid, docId, (data) => {
-      setSegments(data);
-    });
-
+    async function load() {
+      try {
+        const response = await apiFetch(`/api/documents/${encodeURIComponent(docId)}?userId=${encodeURIComponent(user.uid)}`, {
+          cache: "no-store", signal: controller.signal,
+        });
+        const rawBody = await response.text();
+        let body = {};
+        try {
+          body = rawBody ? JSON.parse(rawBody) : {};
+        } catch {
+          const status = response.status ? ` (${response.status})` : "";
+          throw new Error(
+            `The document server returned an invalid response${status}. Restart the app and retry.`,
+          );
+        }
+        if (!response.ok) throw new Error(body.error || "Could not load the saved document.");
+        if (!body.document || !Array.isArray(body.ideas)) throw new Error("The document response was incomplete. Please retry.");
+        if (!active) return;
+        upsertDocument(body.document);
+        setLoadedDocument(body.document);
+        setSegments(Object.fromEntries(body.ideas.map(idea => [idea.id, idea])));
+        setLoadedKey(`${user.uid}/${docId}`);
+        unsubscribe = subscribeToDocumentSegments(user.uid, docId, data => {
+          if (active) { setSegments(data); setSyncError(""); }
+        }, () => {
+          if (active) setSyncError("Live updates are unavailable. Showing the last loaded canvas.");
+        });
+      } catch (error) {
+        if (active && error.name !== "AbortError") setLoadError(error.message || "Could not load the document.");
+      }
+    }
+    load();
     return () => {
+      active = false;
+      controller.abort();
       unsubscribe();
       setActiveDocumentId(null);
     };
-  }, [user?.uid, docId, setActiveDocumentId, setSegments]);
-
-  // ── load doc list (+ context) if store is empty ──────────────────
-  useEffect(() => {
-    if (!user?.uid || documents.length > 0) return;
-    fetch(`/api/documents?userId=${user.uid}`)
-      .then((r) => r.json())
-      .then(({ documents: docs }) => docs && setDocuments(docs))
-      .catch(console.error);
-  }, [user?.uid, documents.length, setDocuments]);
-
-  // ── if this specific doc is missing from store, fetch it directly ─
-  useEffect(() => {
-    if (!user?.uid || !docId || activeDoc !== undefined) return;
-    fetch(`/api/documents/${docId}/context?userId=${user.uid}`)
-      .then((r) => r.json())
-      .then(({ context }) => {
-        if (context) setDocumentContext(docId, context);
-      })
-      .catch(console.error);
-  }, [user?.uid, docId, activeDoc, setDocumentContext]);
+  }, [user?.uid, docId, loadAttempt, upsertDocument, setActiveDocumentId, setSegments]);
 
   // ── helpers ──────────────────────────────────────────────────────
 
@@ -157,7 +186,7 @@ export default function DocumentPage({ params }) {
       handleOpenContext(true);
       return;
     }
-    const res = await fetch("/api/research", {
+    const res = await apiFetch("/api/research", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -184,7 +213,7 @@ export default function DocumentPage({ params }) {
 
   const handleDeleteIdea = async (ideaId) => {
     if (!user?.uid) return;
-    const response = await fetch("/api/update-option", {
+    const response = await apiFetch("/api/update-option", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.uid, documentId: docId, ideaId }),
@@ -206,7 +235,7 @@ export default function DocumentPage({ params }) {
     const sectionIdeas = idea ? getNowIdeas(idea.segment) : [];
     const priority = decisionStatus === "now" ? sectionIdeas.length + 1 : null;
 
-    await fetch("/api/update-option", {
+    const response = await apiFetch("/api/update-option", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -217,6 +246,10 @@ export default function DocumentPage({ params }) {
         priority,
       }),
     });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "The canvas could not be updated.");
+    }
   };
 
   const handleMovePriority = async (sectionKey, ideaId, direction) => {
@@ -229,8 +262,8 @@ export default function DocumentPage({ params }) {
 
     const current = nowIdeas[currentIndex];
     const adjacent = nowIdeas[nextIndex];
-    await Promise.all([
-      fetch("/api/update-option", {
+    const responses = await Promise.all([
+      apiFetch("/api/update-option", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -241,7 +274,7 @@ export default function DocumentPage({ params }) {
           priority: nextIndex + 1,
         }),
       }),
-      fetch("/api/update-option", {
+      apiFetch("/api/update-option", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -253,10 +286,11 @@ export default function DocumentPage({ params }) {
         }),
       }),
     ]);
+    if (responses.some(response => !response.ok)) throw new Error("Could not save priority. Please retry.");
   };
 
   const handleRegenerate = async (sectionKey) => {
-    if (!user?.uid || !sectionKey) return;
+    if (!user?.uid || !sectionKey || regeneratingSectionKey) return;
 
     // Block generation if context is missing — open context panel instead
     if (!hasContext) {
@@ -264,9 +298,10 @@ export default function DocumentPage({ params }) {
       return;
     }
 
+    setActionError("");
     setRegeneratingSectionKey(sectionKey);
     try {
-      await fetch("/api/prompt", {
+      const response = await apiFetch("/api/prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -276,8 +311,12 @@ export default function DocumentPage({ params }) {
           segment: sectionKey,
         }),
       });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Generation failed. Please retry.");
+      }
     } catch (err) {
-      console.error("Regenerate failed:", err);
+      setActionError(err.message);
     } finally {
       setRegeneratingSectionKey(null);
     }
@@ -285,27 +324,25 @@ export default function DocumentPage({ params }) {
 
   // ── render ───────────────────────────────────────────────────────
 
-  if (authLoading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          color: "#aaa",
-          fontSize: 14,
-        }}
-      >
-        Loading…
-      </div>
-    );
+  if (loadError && !authLoading && user) {
+    return <div role="alert" style={{ padding: 40, color: "#20201f" }}>
+      <h2>Unable to load this document</h2>
+      <p>{loadError}</p>
+      <button onClick={() => setLoadAttempt(value => value + 1)}>Retry</button>
+      <button onClick={() => router.push("/documents")} style={{ marginLeft: 12 }}>Your Documents</button>
+    </div>;
+  }
+
+  if (authLoading || !user || loadedKey !== documentKey) {
+    return <RouteLoading label="Restoring your canvas" />;
   }
 
   const anyPanelOpen = openPanelKey !== null;
 
   return (
     <>
+      {actionError && <div role="alert" style={{ position: "fixed", top: 16, right: 16, zIndex: 80, padding: 12, background: "#fee2e2", color: "#991b1b" }}>{actionError}<button onClick={() => setActionError("")} style={{ marginLeft: 12 }}>Dismiss</button></div>}
+      {syncError && <div role="status" style={{ position: "fixed", bottom: 16, left: 260, zIndex: 60, padding: 12, background: "#fff5dc", color: "#654500" }}>{syncError}</div>}
       {/* Sidebar */}
       <DocSidebar
         docId={docId}
@@ -337,6 +374,7 @@ export default function DocumentPage({ params }) {
           <StudioApp
             document={{
               id: docId,
+              opportunityForm: activeDoc?.opportunityForm,
               title: activeDoc?.title ?? "Business Model Canvas",
               goal: docContext?.idea ?? "",
             }}
@@ -344,6 +382,7 @@ export default function DocumentPage({ params }) {
             hideSidebar
             activeView={validationView}
             onViewChange={setValidationView}
+            canvasIdeas={Object.values(segments ?? {})}
           />
         ) : <div
           style={{
@@ -477,6 +516,8 @@ export default function DocumentPage({ params }) {
             ideas: segments,
           }}
           initialMessage={chatInitialMessage}
+          ideas={Object.values(segments ?? {})}
+          onDecisionChange={handleDecisionChange}
           onClose={handleClosePanel}
         />
       )}

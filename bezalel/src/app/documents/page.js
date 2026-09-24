@@ -1,13 +1,19 @@
 "use client";
 
+import { apiFetch } from "@/firebase/apiFetch";
+
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "@/components/loading/NavigationLink";
+import RouteLoading from "@/components/loading/RouteLoading";
+import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useDocumentStore } from "@/stores/documentStore";
 
 export default function DocumentsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const documentsLoaded = useDocumentStore((state) => state.documentsLoaded);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const documents = useDocumentStore((state) => state.documents);
   const setDocuments = useDocumentStore((state) => state.setDocuments);
   const addDocument = useDocumentStore((state) => state.addDocument);
@@ -18,6 +24,7 @@ export default function DocumentsPage() {
   const [newTitle, setNewTitle] = useState("");
   const [showNewInput, setShowNewInput] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [error, setError] = useState("");
 
   // Auth guard
   useEffect(() => {
@@ -27,31 +34,40 @@ export default function DocumentsPage() {
   // Load docs
   useEffect(() => {
     if (!user?.uid) return;
+    const controller = new AbortController();
+    let active = true;
     const load = async () => {
       setLoading(true);
+      setError("");
       try {
-        const res = await fetch(`/api/documents?userId=${user.uid}`);
+        const res = await apiFetch(`/api/documents?userId=${user.uid}`, { signal: controller.signal });
+        if (!res.ok) throw new Error("Could not load your documents. Please reload to retry.");
         if (res.ok) {
           const { documents: docs } = await res.json();
-          setDocuments(docs);
+          if (active) setDocuments(docs);
         }
+      } catch (err) {
+        if (active && err.name !== "AbortError") setError(err.message);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
     load();
-  }, [user?.uid, setDocuments]);
+    return () => { active = false; controller.abort(); };
+  }, [user?.uid, setDocuments, loadAttempt]);
 
   const handleCreate = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid || creating) return;
     const title = newTitle.trim() || "Untitled";
     setCreating(true);
+    setError("");
     try {
-      const res = await fetch("/api/documents", {
+      const res = await apiFetch("/api/documents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.uid, title }),
       });
+      if (!res.ok) throw new Error("Could not create the document. Please retry.");
       if (res.ok) {
         const { document } = await res.json();
         addDocument(document);
@@ -59,21 +75,27 @@ export default function DocumentsPage() {
         setShowNewInput(false);
         router.push(`/document/${document.id}`);
       }
+    } catch (err) {
+      setError(err.message);
     } finally {
       setCreating(false);
     }
   };
 
   const handleDelete = async (docId) => {
-    if (!user?.uid) return;
+    if (!user?.uid || deletingId) return;
     setDeletingId(docId);
+    setError("");
     try {
-      await fetch(`/api/documents/${docId}`, {
+      const response = await apiFetch(`/api/documents/${docId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.uid }),
       });
+      if (!response.ok) throw new Error("Could not delete the document. Please retry.");
       removeDocument(docId);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setDeletingId(null);
     }
@@ -82,7 +104,8 @@ export default function DocumentsPage() {
   const formatDate = (ts) => {
     if (!ts) return "";
     // Firestore server timestamps arrive as { seconds, nanoseconds }
-    const ms = ts.seconds ? ts.seconds * 1000 : ts;
+    const seconds = ts.seconds ?? ts._seconds;
+    const ms = seconds != null ? seconds * 1000 : ts;
     return new Date(ms).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -90,16 +113,14 @@ export default function DocumentsPage() {
     });
   };
 
-  if (authLoading || loading) {
-    return (
-      <div style={styles.centered}>
-        <span style={styles.spinner}>↺</span>
-      </div>
-    );
+  if (authLoading || !user || (loading && !documentsLoaded && documents.length === 0)) {
+    return <RouteLoading label="Opening your documents" />;
   }
 
   return (
     <div style={styles.page}>
+      {error && <p role="alert" style={{ color: "#b91c1c" }}>{error} <button onClick={() => setLoadAttempt(value => value + 1)}>Retry</button></p>}
+      {loading && <p role="status">Refreshing documents...</p>}
       {/* Header */}
       <div style={styles.header}>
         <div>
@@ -108,14 +129,16 @@ export default function DocumentsPage() {
             Each document is a full business model canvas for one idea.
           </p>
         </div>
-        <button
-          onClick={() => setShowNewInput(true)}
-          style={styles.primaryBtn}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#333")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "#1a1a1a")}
-        >
-          + New Document
-        </button>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <button
+            onClick={() => setShowNewInput(true)}
+            style={styles.primaryBtn}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#333")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#1a1a1a")}
+          >
+            + New Document
+          </button>
+        </div>
       </div>
 
       {/* New doc input */}
@@ -189,8 +212,8 @@ export default function DocumentsPage() {
                 (e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.04)")
               }
             >
-              <button
-                onClick={() => router.push(`/document/${doc.id}`)}
+              <Link
+                href={`/document/${doc.id}`}
                 style={styles.docCardMain}
               >
                 <span style={styles.docIcon}>📄</span>
@@ -198,7 +221,7 @@ export default function DocumentsPage() {
                   <p style={styles.docTitle}>{doc.title || "Untitled"}</p>
                   <p style={styles.docDate}>{formatDate(doc.createdAt)}</p>
                 </div>
-              </button>
+              </Link>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -208,7 +231,7 @@ export default function DocumentsPage() {
                     handleDelete(doc.id);
                   }
                 }}
-                disabled={deletingId === doc.id}
+                disabled={deletingId !== null}
                 title="Delete document"
                 style={styles.deleteBtn}
                 onMouseEnter={(e) =>
@@ -316,6 +339,8 @@ const styles = {
     transition: "box-shadow 0.2s",
   },
   docCardMain: {
+    textDecoration: "none",
+    color: "inherit",
     flex: 1,
     display: "flex",
     alignItems: "center",

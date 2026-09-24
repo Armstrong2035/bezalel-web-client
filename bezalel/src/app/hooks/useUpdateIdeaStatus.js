@@ -1,5 +1,7 @@
 "use client";
 
+import { apiFetch } from "@/firebase/apiFetch";
+
 import { useState } from "react";
 import { useAuth } from "./useAuth";
 
@@ -19,7 +21,7 @@ export const useUpdateIdeaStatus = () => {
     setError(null);
 
     try {
-      const response = await fetch("/api/update-option", {
+      const response = await apiFetch("/api/update-option", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

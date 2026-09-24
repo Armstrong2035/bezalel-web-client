@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
+import RouteLoading from "@/components/loading/RouteLoading";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import onboardingQuestions from "@/components/onboarding/helpers/onboardingData";
@@ -31,8 +32,8 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  if (authLoading) {
-    return <div style={styles.centered}>Loading…</div>;
+  if (authLoading || !user) {
+    return <RouteLoading label="Opening settings" />;
   }
 
   return (

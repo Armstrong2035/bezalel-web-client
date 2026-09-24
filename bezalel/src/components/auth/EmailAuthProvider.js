@@ -2,13 +2,14 @@
 import { Box, TextField, Typography, Button } from "@mui/material";
 import { useState } from "react";
 import { signUpWithEmail, signInWithEmail } from "@/firebase/auth";
-import { useRouter } from "next/navigation";
+import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
 import { saveOnboardingContext } from "@/firebase/saveDecisionContext";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 
 export default function EmailAuthProvider({ cta }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
 
   const onboardingData = useOnboardingStore((state) => state.onboardingData);
@@ -16,6 +17,9 @@ export default function EmailAuthProvider({ cta }) {
   const router = useRouter();
 
   const handleEmailAuth = async () => {
+    if (pending) return;
+    setPending(true);
+    setError(null);
     try {
       let res;
       if (cta === "Sign up") {
@@ -36,6 +40,8 @@ export default function EmailAuthProvider({ cta }) {
     } catch (error) {
       console.error(`${cta} with email failed:`, error);
       setError(error.message);
+    } finally {
+      setPending(false);
     }
   };
 
@@ -101,8 +107,10 @@ export default function EmailAuthProvider({ cta }) {
           border: "1px solid rgba(255, 255, 255, 0.7)",
         }}
         onClick={handleEmailAuth}
+        disabled={pending}
+        aria-busy={pending}
       >
-        {cta}
+        {pending ? "Please wait..." : cta}
       </Button>
     </Box>
   );

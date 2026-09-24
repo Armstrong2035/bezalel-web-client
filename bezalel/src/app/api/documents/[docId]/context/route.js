@@ -1,3 +1,4 @@
+import { withAuth } from "@/app/lib/withAuth";
 import { NextResponse } from "next/server";
 import { saveDocumentContext, getDocument } from "@/app/lib/services/documentService";
 
@@ -5,7 +6,7 @@ import { saveDocumentContext, getDocument } from "@/app/lib/services/documentSer
  * GET /api/documents/[docId]/context?userId=xxx
  * Returns the context object stored on a document.
  */
-export async function GET(request, { params }) {
+async function handleGET(request, { params }) {
   try {
     const { docId } = await params;
     const { searchParams } = new URL(request.url);
@@ -32,7 +33,7 @@ export async function GET(request, { params }) {
  * Body: { userId, context }
  * Saves (replaces) the entire context object for a document.
  */
-export async function PUT(request, { params }) {
+async function handlePUT(request, { params }) {
   try {
     const { docId } = await params;
     const { userId, context } = await request.json();
@@ -51,3 +52,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const GET = withAuth(handleGET);
+
+export const PUT = withAuth(handlePUT);

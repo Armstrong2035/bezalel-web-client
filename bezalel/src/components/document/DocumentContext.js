@@ -1,5 +1,7 @@
 "use client";
 
+import { apiFetch } from "@/firebase/apiFetch";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/app/hooks/useAuth";
 import { useDocumentStore } from "@/stores/documentStore";
@@ -66,7 +68,7 @@ export default function DocumentContext({
     setError(null);
 
     try {
-      const res = await fetch(`/api/documents/${docId}/context`, {
+      const res = await apiFetch(`/api/documents/${docId}/context`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.uid, context }),
@@ -82,7 +84,7 @@ export default function DocumentContext({
       onSaved?.(context);
 
       if (closeAfterSave && !isRequired) {
-        setTimeout(() => onClose(), 800);
+        onClose();
       }
     } catch (err) {
       setError(err.message);

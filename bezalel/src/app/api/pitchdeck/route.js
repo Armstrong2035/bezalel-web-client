@@ -1,12 +1,11 @@
+import { withAuth } from "@/app/lib/withAuth";
 import { NextResponse } from "next/server";
 import { getAllPitchDeckIdeas } from "../../lib/engines/pitchdeckEngine/curateCanvasInfo";
 
-export async function GET() {
-  const TEST_USER_ID = "kuvbZ1IzALbrJhePyfCpWXY3SDs2";
+async function handleGET(request, context, user) {
 
   try {
-    console.log(`API route: Fetching pitch deck ideas for ${TEST_USER_ID}`);
-    const pitchDeckData = await getAllPitchDeckIdeas(TEST_USER_ID);
+    const pitchDeckData = await getAllPitchDeckIdeas(user.uid);
 
     if (pitchDeckData) {
       console.log("API route: Successfully fetched data.");
@@ -23,3 +22,5 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const GET = withAuth(handleGET);

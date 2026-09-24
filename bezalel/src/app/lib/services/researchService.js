@@ -1,8 +1,6 @@
 import OpenAI from "openai";
 import { buildCanvasReasoning } from "@/app/lib/engines/canvasEngine/canvasReasoning";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 /**
  * Builds the research prompt with canvas reasoning chain embedded.
  * The reasoning chain gives the AI full canvas context so it researches
@@ -133,7 +131,8 @@ function parseResearchResponse(text) {
  * @param {object} documentSnapshot — full { title, context, ideas } for reasoning
  * @returns {object} Structured research result
  */
-export const researchIdea = async (idea, context, documentSnapshot = null) => {
+export const researchIdea = async (idea, context, documentSnapshot = null, signal) => {
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 120_000, maxRetries: 0 });
   const prompt = buildResearchPrompt(idea, context, documentSnapshot);
 
   const response = await client.responses.create({
@@ -141,7 +140,7 @@ export const researchIdea = async (idea, context, documentSnapshot = null) => {
     tools: [{ type: "web_search_preview" }],
     tool_choice: "required",
     input: prompt,
-  });
+  }, { signal });
 
   const outputText = response.output
     .filter((block) => block.type === "message")

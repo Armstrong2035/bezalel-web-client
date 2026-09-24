@@ -1,8 +1,9 @@
+import { withAuth } from "@/app/lib/withAuth";
 import { createPrompt } from "@/app/lib/engines/canvasEngine/canvasSchema";
 import { generateCanvasSegment } from "@/app/lib/services/llmService";
 import { getDocumentCanvasIdeas, saveIdeaToDocument } from "@/app/lib/services/documentService";
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
     const { context, userId, documentId, segment } = await request.json();
 
@@ -54,3 +55,5 @@ export async function POST(request) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const POST = withAuth(handlePOST);

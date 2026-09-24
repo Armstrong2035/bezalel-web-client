@@ -1,5 +1,7 @@
 "use client";
 
+import { apiFetch } from "@/firebase/apiFetch";
+
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/app/hooks/useAuth";
 import ThinkingBlock from "./ThinkingBlock";
@@ -35,6 +37,9 @@ export default function DocChat({
   docId,
   documentSnapshot,
   initialMessage,
+  ideas = [],
+  onDecisionChange,
+  workspaceMode = false,
   onClose,
 }) {
   const { user } = useAuth();
@@ -44,41 +49,63 @@ export default function DocChat({
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [error, setError] = useState(null);
+  const [showCanvasAction, setShowCanvasAction] = useState(false);
+  const [selectedIdeaId, setSelectedIdeaId] = useState(ideas[0]?.id ?? "");
+  const [canvasActionStatus, setCanvasActionStatus] = useState("now");
+  const [canvasActionError, setCanvasActionError] = useState(null);
+  const [canvasActionReason, setCanvasActionReason] = useState("");
+  const [isInferringCanvasAction, setIsInferringCanvasAction] = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const abortRef = useRef(null);
 
-  const hasContext = !!documentSnapshot?.context?.idea?.trim();
+  const hasContext = workspaceMode || !!documentSnapshot?.context?.idea?.trim();
+  const chatEndpoint = workspaceMode ? "/api/workspace-chat" : "/api/chat";
 
   // ── Load history ─────────────────────────────────────────────────
   useEffect(() => {
     if (!user?.uid || !docId) return;
+    const controller = new AbortController();
+    let active = true;
+    setMessages([]);
+    setError(null);
     const load = async () => {
       setIsLoadingHistory(true);
       try {
-        const res = await fetch(
-          `/api/chat?userId=${user.uid}&documentId=${docId}`,
+        const res = await apiFetch(
+          workspaceMode
+            ? `/api/workspace-chat?userId=${user.uid}`
+            : `/api/chat?userId=${user.uid}&documentId=${docId}`,
+          { signal: controller.signal },
         );
+        if (!res.ok) throw new Error("Could not load chat history. Reopen chat to retry.");
         if (res.ok) {
           const { messages: history } = await res.json();
-          setMessages(history ?? []);
+          if (active) setMessages(history ?? []);
         }
       } catch (err) {
-        console.error("Failed to load chat history:", err);
+        if (active && err.name !== "AbortError") setError(err.message);
       } finally {
-        setIsLoadingHistory(false);
+        if (active) setIsLoadingHistory(false);
       }
     };
     load();
-  }, [user?.uid, docId]);
+    return () => {
+      active = false;
+      controller.abort();
+      abortRef.current?.abort();
+    };
+  }, [user?.uid, docId, workspaceMode]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
-    if (!isLoadingHistory) setTimeout(() => inputRef.current?.focus(), 100);
+    if (isLoadingHistory) return;
+    const timer = setTimeout(() => inputRef.current?.focus(), 100);
+    return () => clearTimeout(timer);
   }, [isLoadingHistory]);
 
   // ── Send ─────────────────────────────────────────────────────────
@@ -108,18 +135,23 @@ export default function DocChat({
 
     const controller = new AbortController();
     abortRef.current = controller;
+    let reader;
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await apiFetch(chatEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({
-          userId: user.uid,
-          documentId: docId,
-          messages: updatedMessages,
-          documentSnapshot,
-        }),
+        body: JSON.stringify(
+          workspaceMode
+            ? { userId: user.uid, messages: updatedMessages }
+            : {
+                userId: user.uid,
+                documentId: docId,
+                messages: updatedMessages,
+                documentSnapshot,
+              },
+        ),
       });
 
       if (!res.ok) {
@@ -127,7 +159,7 @@ export default function DocChat({
         throw new Error(body.error ?? "Chat request failed");
       }
 
-      const reader = res.body.getReader();
+      reader = res.body.getReader();
       const decoder = new TextDecoder();
       let rawAccumulated = "";
       let reasoningSteps = null;
@@ -207,9 +239,15 @@ export default function DocChat({
         );
       } else {
         setError(err.message ?? "Something went wrong");
-        setMessages((prev) => prev.filter((m) => !m.streaming));
+        setMessages((prev) => prev.map((m) => m.streaming
+          ? { ...m, streaming: false, reasoningStreaming: false }
+          : m));
       }
     } finally {
+      if (reader) {
+        await reader.cancel().catch(() => {});
+        reader.releaseLock();
+      }
       setIsStreaming(false);
       abortRef.current = null;
     }
@@ -217,18 +255,72 @@ export default function DocChat({
 
   const handleStop = () => abortRef.current?.abort();
 
+  const handleApplyCanvasChange = async () => {
+    const idea = ideas.find((item) => item.id === selectedIdeaId);
+    if (!idea || !onDecisionChange) return;
+
+    setCanvasActionError(null);
+    try {
+      await onDecisionChange(idea.id, canvasActionStatus);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `Canvas updated: “${idea.title}” is now marked “${canvasActionStatus === "notPursuing" ? "Not pursuing" : canvasActionStatus[0].toUpperCase() + canvasActionStatus.slice(1)}”.`,
+        },
+      ]);
+      setShowCanvasAction(false);
+    } catch (err) {
+      setCanvasActionError(err.message ?? "The canvas could not be updated.");
+    }
+  };
+
+  const inferCanvasAction = async () => {
+    if (!ideas.length || messages.length === 0) return;
+    setIsInferringCanvasAction(true);
+    setCanvasActionError(null);
+    try {
+      const response = await apiFetch("/api/chat/canvas-action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages, ideas }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not infer the canvas change.");
+      if (result.ideaId) setSelectedIdeaId(result.ideaId);
+      if (result.status) setCanvasActionStatus(result.status);
+      setCanvasActionReason(result.reason || "");
+    } catch (err) {
+      setCanvasActionError(err.message ?? "Could not infer the canvas change.");
+    } finally {
+      setIsInferringCanvasAction(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showCanvasAction) inferCanvasAction();
+    // The action panel should read the current conversation once when opened.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCanvasAction]);
+
   const handleClearHistory = async () => {
     if (!user?.uid || !confirm("Clear all chat history for this document?"))
       return;
     try {
-      await fetch("/api/chat", {
+      const response = await apiFetch(chatEndpoint, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.uid, documentId: docId }),
+        body: JSON.stringify(
+          workspaceMode
+            ? { userId: user.uid }
+            : { userId: user.uid, documentId: docId },
+        ),
       });
+      if (!response.ok) throw new Error("Could not clear chat history. Please retry.");
       setMessages([]);
     } catch (err) {
       console.error("Failed to clear chat history:", err);
+      setError(err.message);
     }
   };
 
@@ -286,10 +378,12 @@ export default function DocChat({
                 letterSpacing: "-0.3px",
               }}
             >
-              Canvas Chat
+              {workspaceMode ? "Workspace Chat" : "Canvas Chat"}
             </h3>
             <p style={{ margin: "3px 0 0", fontSize: 12, color: "#999" }}>
-              Ask anything about your business model
+              {workspaceMode
+                ? "Think across your businesses, ideas, and opportunities"
+                : "Ask anything about your business model"}
             </p>
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -333,7 +427,7 @@ export default function DocChat({
           </div>
         </div>
 
-        {!hasContext && (
+        {!hasContext && !workspaceMode && (
           <div
             style={{
               padding: "10px 20px",
@@ -403,7 +497,78 @@ export default function DocChat({
             flexShrink: 0,
             background: "#fafafa",
           }}
-        >
+          >
+          {!workspaceMode && showCanvasAction && (
+            <div
+              style={{
+                marginBottom: 10,
+                padding: 12,
+                background: "#f4fbf4",
+                border: "1px solid #b8d9ba",
+                borderRadius: 8,
+              }}
+            >
+              <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "#287c2f" }}>
+                APPLY A CANVAS CHANGE
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 9 }}>
+                <button
+                  onClick={inferCanvasAction}
+                  disabled={isInferringCanvasAction || messages.length === 0}
+                  style={{ ...canvasActionToggleStyle, margin: 0 }}
+                >
+                  {isInferringCanvasAction ? "Reading conversation…" : "Infer from conversation"}
+                </button>
+                {canvasActionReason && <span style={{ fontSize: 11, color: "#666" }}>{canvasActionReason}</span>}
+              </div>
+              <div style={{ display: "flex", gap: 7 }}>
+                <select
+                  value={selectedIdeaId}
+                  onChange={(e) => setSelectedIdeaId(e.target.value)}
+                  style={canvasActionSelectStyle}
+                  aria-label="Idea to update"
+                >
+                  {ideas.length === 0 ? (
+                    <option value="">No canvas ideas yet</option>
+                  ) : (
+                    ideas.map((idea) => (
+                      <option key={idea.id} value={idea.id}>
+                        {idea.segment ? `${idea.segment} · ` : ""}{idea.title}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <select
+                  value={canvasActionStatus}
+                  onChange={(e) => setCanvasActionStatus(e.target.value)}
+                  style={{ ...canvasActionSelectStyle, flex: "0 0 125px" }}
+                  aria-label="New canvas status"
+                >
+                  <option value="now">Now</option>
+                  <option value="later">Later</option>
+                  <option value="explore">Explore</option>
+                  <option value="notPursuing">Not pursuing</option>
+                </select>
+                <button
+                  onClick={handleApplyCanvasChange}
+                  disabled={!selectedIdeaId || ideas.length === 0}
+                  style={canvasActionButtonStyle}
+                >
+                  Apply
+                </button>
+              </div>
+              {canvasActionError && <p style={{ margin: "7px 0 0", fontSize: 11, color: "#b91c1c" }}>{canvasActionError}</p>}
+            </div>
+          )}
+          {!workspaceMode && (
+          <button
+            onClick={() => setShowCanvasAction((value) => !value)}
+            disabled={!hasContext || ideas.length === 0}
+            style={canvasActionToggleStyle}
+          >
+            {showCanvasAction ? "× Close canvas action" : "✦ Change the canvas from chat"}
+          </button>
+          )}
           <div
             style={{
               display: "flex",
@@ -427,7 +592,9 @@ export default function DocChat({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={
-                hasContext
+                workspaceMode
+                  ? "Think across your work…"
+                  : hasContext
                   ? "Ask about your canvas, spot contradictions, brainstorm…"
                   : "Add context to start chatting"
               }
@@ -518,6 +685,41 @@ export default function DocChat({
 }
 
 /* ------------------------------------------------------------------ */
+
+const canvasActionSelectStyle = {
+  flex: 1,
+  minWidth: 0,
+  padding: "7px 8px",
+  border: "1px solid #cfe1cf",
+  borderRadius: 6,
+  background: "white",
+  color: "#333",
+  fontSize: 12,
+};
+
+const canvasActionButtonStyle = {
+  flexShrink: 0,
+  padding: "7px 11px",
+  border: "none",
+  borderRadius: 6,
+  background: "#287c2f",
+  color: "white",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const canvasActionToggleStyle = {
+  display: "block",
+  margin: "0 0 9px auto",
+  padding: "3px 0",
+  border: "none",
+  background: "none",
+  color: "#287c2f",
+  fontSize: 11,
+  fontWeight: 600,
+  cursor: "pointer",
+};
 
 function MessageBubble({ message }) {
   const isUser = message.role === "user";

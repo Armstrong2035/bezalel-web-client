@@ -1,3 +1,4 @@
+import { apiFetch } from "@/firebase/apiFetch";
 import { useState } from "react";
 import { Box, Typography, Stack, Grid, Fab, Backdrop } from "@mui/material";
 import ShuffleIcon from "@mui/icons-material/Shuffle";
@@ -5,6 +6,7 @@ import IdeaCard from "./ideaCard/IdeaCard";
 import { useOnboardingStore } from "@/stores/onboardingStore";
 import convertOnboardingData from "../../onboarding/helpers/covertOnboardingData";
 import { useAuth } from "@/app/hooks/useAuth";
+import RouteLoading from "@/components/loading/RouteLoading";
 import LoadingPage from "../../loading/LoadingPage";
 import GetStartedCard from "./GetStartedCard";
 
@@ -29,7 +31,7 @@ export default function GeneratedIdeas({ cards, segment }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/update-option", {
+      const response = await apiFetch("/api/update-option", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -68,7 +70,7 @@ export default function GeneratedIdeas({ cards, segment }) {
     const context = await convertOnboardingData(onboardingData);
 
     try {
-      const response = await fetch("/api/prompt", {
+      const response = await apiFetch("/api/prompt", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -104,7 +106,7 @@ export default function GeneratedIdeas({ cards, segment }) {
     return <GetStartedCard segment={segment} functionHandler={generateIdeas} />;
   };
   if (authLoading) {
-    return <LoadingPage segment={segment} />;
+    return <RouteLoading label="Opening your ideas" />;
   }
 
   return (

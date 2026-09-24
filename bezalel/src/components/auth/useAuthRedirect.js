@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
 import { onAuthStateChange, getUserDocument } from "@/firebase/auth";
 
 export function useAuthRedirect() {
@@ -14,8 +14,6 @@ export function useAuthRedirect() {
       const pathname = window.location.pathname;
 
       if (user) {
-        // Delay to ensure Firestore updates propagate
-        await new Promise((resolve) => setTimeout(resolve, 1000));
         const userDoc = await getUserDocument(user.uid);
         const onboardingCompleted = userDoc?.onboardingCompleted || false;
 

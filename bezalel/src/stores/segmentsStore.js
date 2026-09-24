@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 
 const useSegmentsStore = create((set) => ({
   segments: {},
+  replaceSegments: (data) => set({ segments: data }),
   setSegments: (data) =>
     set((state) => ({
       segments: { ...state.segments, ...data },

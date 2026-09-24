@@ -1,6 +1,8 @@
+import { withAuth } from "@/app/lib/withAuth";
 import { NextResponse } from "next/server";
 import { buildCanvasReasoning, buildCanvasSummary } from "@/app/lib/engines/canvasEngine/canvasReasoning";
 import { getChatMemory, saveChatMemory, saveChatMessage } from "@/app/lib/services/documentService";
+import { readChatEvents } from "@/app/lib/services/readChatEvents.mjs";
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_MODEL = "deepseek-v4-flash";
@@ -54,6 +56,7 @@ Return JSON only:
 
   const response = await fetch(DEEPSEEK_CHAT_URL, {
     method: "POST",
+    signal: AbortSignal.timeout(30_000),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
@@ -86,7 +89,7 @@ Return JSON only:
  *   documentSnapshot: { title, context, ideas }
  * }
  */
-export async function POST(request) {
+async function handlePOST(request) {
   try {
     const { userId, documentId, messages, documentSnapshot } = await request.json();
 
@@ -137,8 +140,11 @@ export async function POST(request) {
       })),
     ];
 
+    const abort = new AbortController();
+    const signal = AbortSignal.any([request.signal, abort.signal, AbortSignal.timeout(120_000)]);
     const deepseekRes = await fetch(DEEPSEEK_CHAT_URL, {
       method: "POST",
+      signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
@@ -158,6 +164,7 @@ export async function POST(request) {
 
     const encoder = new TextEncoder();
     let fullResponse = "";
+    let cancelled = false;
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -168,37 +175,20 @@ export async function POST(request) {
         controller.enqueue(encoder.encode(preamble));
 
         // ── Stream Gemini response ──────────────────────────────────────
-        const reader = deepseekRes.body.getReader();
-        const decoder = new TextDecoder();
-
+        let completed = false;
         try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split("\n");
-
-            for (const line of lines) {
-              if (!line.startsWith("data:")) continue;
-              const jsonStr = line.slice(5).trim();
-              if (!jsonStr || jsonStr === "[DONE]") continue;
-
-              try {
-                const event = JSON.parse(jsonStr);
-                const text = event.choices?.[0]?.delta?.content ?? "";
-                if (text) {
-                  fullResponse += text;
-                  controller.enqueue(encoder.encode(text));
-                }
-              } catch {
-                // skip malformed SSE lines
-              }
+          for await (const event of readChatEvents(deepseekRes.body)) {
+            const text = event.choices?.[0]?.delta?.content ?? "";
+            if (text) {
+              fullResponse += text;
+              if (!cancelled) controller.enqueue(encoder.encode(text));
             }
           }
+          completed = true;
+        } catch (error) {
+          if (!cancelled) controller.error(error);
         } finally {
-          controller.close();
-          reader.releaseLock();
+          if (completed && !cancelled) controller.close();
 
           // Persist both turns after stream completes
           if (fullResponse && userId && documentId) {
@@ -209,20 +199,24 @@ export async function POST(request) {
                 // Store reasoning with the message so history shows it too
                 reasoning: reasoningSteps,
               });
-              const refreshedMemory = await refreshChatMemory(chatMemory, lastUser?.content ?? "", fullResponse);
-              await saveChatMemory(userId, documentId, refreshedMemory);
+              if (completed && !signal.aborted) {
+                const refreshedMemory = await refreshChatMemory(chatMemory, lastUser?.content ?? "", fullResponse);
+                await saveChatMemory(userId, documentId, refreshedMemory);
+              }
             } catch (saveErr) {
               console.error("[chat] Failed to save messages:", saveErr);
             }
           }
         }
       },
+      cancel() { cancelled = true; abort.abort(); },
     });
 
     return new Response(stream, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "Transfer-Encoding": "chunked",
+        "Cache-Control": "no-store, no-transform",
+        "X-Accel-Buffering": "no",
         "X-Content-Type-Options": "nosniff",
       },
     });
@@ -273,7 +267,7 @@ function parseReasoningSteps(reasoningText) {
   return steps;
 }
 
-export async function GET(request) {
+async function handleGET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
@@ -292,7 +286,7 @@ export async function GET(request) {
   }
 }
 
-export async function DELETE(request) {
+async function handleDELETE(request) {
   try {
     const { userId, documentId } = await request.json();
 
@@ -308,3 +302,9 @@ export async function DELETE(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export const POST = withAuth(handlePOST);
+
+export const GET = withAuth(handleGET);
+
+export const DELETE = withAuth(handleDELETE);
