@@ -1,17 +1,8 @@
 import { create } from "zustand";
-import { buildSampleMessages } from "./inboxSample";
 
-/**
- * Holds the orchestrator's inbox: the messages that tools (Explorium, Grokbot,
- * Bezalel, OpenAI, Poysis, and future automations) send to the user.
- *
- * This store is intentionally provider-agnostic. A real integration replaces
- * `seedSampleMessages` with a fetch from a durable activity collection and
- * reuses the same `upsertMessage` / `markRead` / `removeMessage` actions.
- */
-const useInboxStore = create((set, get) => ({
+// Holds real activity loaded from the authenticated user's inbox.
+const useInboxStore = create((set) => ({
   messages: [],
-  seededUid: null,
 
   setMessages: (messages) => set({ messages }),
 
@@ -52,11 +43,6 @@ const useInboxStore = create((set, get) => ({
       messages: state.messages.filter((m) => m.documentId !== documentId),
     })),
 
-  seedSampleMessages: (uid, documents) => {
-    const { seededUid } = get();
-    if (seededUid === uid) return;
-    set({ messages: buildSampleMessages(documents ?? []), seededUid: uid });
-  },
 }));
 
 export { useInboxStore };

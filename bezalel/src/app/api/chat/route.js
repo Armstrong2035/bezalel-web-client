@@ -1,42 +1,14 @@
 import { DEEPSEEK_URL, getDeepSeekModel } from "@/app/lib/services/deepseekConfig.mjs";
 import { withAuth } from "@/app/lib/withAuth";
 import { NextResponse } from "next/server";
-import { buildCanvasReasoning, buildCanvasSummary } from "@/app/lib/engines/canvasEngine/canvasReasoning";
-import { getChatMemory, saveChatMemory, saveChatMessage } from "@/app/lib/services/documentService";
+import { buildCanvasReasoning } from "@/app/lib/engines/canvasEngine/canvasReasoning";
+import { saveChatMemory, saveChatMessage } from "@/app/lib/services/documentService";
 import { readChatEvents } from "@/app/lib/services/readChatEvents.mjs";
 
+import { loadChatContext } from "@/app/lib/services/chatContext";
+import { buildChatSystemPrompt } from "@/app/lib/services/chatSystemPrompt";
+
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-
-/**
- * Builds the system prompt — embeds canvas summary + full reasoning chain.
- */
-function buildSystemPrompt(documentSnapshot, chatMemory) {
-  const summary = buildCanvasSummary(documentSnapshot);
-  const reasoning = buildCanvasReasoning(documentSnapshot);
-
-  return `You are a sharp, direct business strategy advisor embedded inside a business model canvas tool called Bezalel.
-
-You are talking with the founder of this business. You have full access to their current canvas state.
-
-${summary}
-
-${chatMemory ? `DURABLE CONVERSATION MEMORY:\n${JSON.stringify(chatMemory)}\n\nUse this memory as background context. It records prior decisions and open questions, but the current canvas remains the source of truth.` : ""}
-
-Your role:
-- Help the founder interrogate, stress-test, and improve their canvas
-- Surface contradictions, weak links, and missing assumptions they haven't noticed
-- Brainstorm alternatives when they're stuck
-- Be specific — always reference their actual ideas, not generic advice
-- Be concise and direct — founders are busy, cut the filler
-- When you spot a problem that spans multiple sections, say so explicitly
-
-DO NOT:
-- Give generic startup advice that ignores their specific canvas
-- Be sycophantic or pad responses with affirmations
-- Repeat the canvas back to them unless they asked
-
-${reasoning}`;
-}
 
 async function refreshChatMemory(existingMemory, userMessage, assistantMessage) {
   const prompt = `Create durable memory for a founder's business-canvas conversation. Use only information in the previous memory and the latest exchange. Do not invent facts, recommendations, customer segments, commitments, or metrics. Keep it concise and preserve only information useful in future conversation.
@@ -84,13 +56,13 @@ Return JSON only:
  *
  * Body: {
  *   userId, documentId,
- *   messages: [{ role, content }],
- *   documentSnapshot: { title, context, ideas }
+ *   messages: [{ role, content }]
+ *   Business context is loaded from the authenticated user's saved document.
  * }
  */
 async function handlePOST(request) {
   try {
-    const { userId, documentId, messages, documentSnapshot } = await request.json();
+    const { userId, documentId, messages } = await request.json();
 
     if (!userId || !documentId) {
       return NextResponse.json({ error: "userId and documentId are required" }, { status: 400 });
@@ -98,23 +70,16 @@ async function handlePOST(request) {
     if (!messages?.length) {
       return NextResponse.json({ error: "messages array is required" }, { status: 400 });
     }
-    if (!documentSnapshot?.context?.idea?.trim()) {
-      return NextResponse.json({ error: "Document context is required before chatting" }, { status: 400 });
-    }
     if (!DEEPSEEK_API_KEY) {
       return NextResponse.json({ error: "DEEPSEEK_API_KEY is not configured" }, { status: 500 });
     }
 
-    // Build reasoning chain — sent to client AND embedded in system prompt
+    const saved = await loadChatContext(userId, documentId);
+    if (!saved) return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    const documentSnapshot = saved.snapshot;
+    const chatMemory = saved.memory;
     const reasoningText = buildCanvasReasoning(documentSnapshot);
-    let chatMemory = null;
-    try {
-      chatMemory = await getChatMemory(userId, documentId);
-    } catch (memoryError) {
-      // A transient Firestore failure must not make the chat unavailable.
-      console.error("[chat] Failed to load memory; continuing without it:", memoryError);
-    }
-    const systemPrompt = buildSystemPrompt(documentSnapshot, chatMemory);
+    const systemPrompt = buildChatSystemPrompt(documentSnapshot, chatMemory, saved.features);
 
     // Parse reasoning into discrete steps for the client UI
     const reasoningSteps = parseReasoningSteps(reasoningText);

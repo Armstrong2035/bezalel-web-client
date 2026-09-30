@@ -20,55 +20,6 @@ const businesses = [
   { ...businessDocuments[2], idea: "A decision workspace for founders.", priority: "Turn business-model choices into market action." },
 ];
 
-const initialInbox = [
-  {
-    id: "suffering",
-    type: "research",
-    category: "CHRISTIANITY",
-    title: "Why does God allow suffering?",
-    summary: "Search interest around this question is rising across Google, YouTube and Reddit.",
-    why: "The question is emotionally urgent, highly searchable, and gives you room to offer a thoughtful perspective rather than another simple answer.",
-    suggestedAngle: "Perhaps the more interesting question is not why suffering exists, but what kind of person suffering can make us.",
-    evidence: [
-      { source: "Google Search", title: "Growing question demand", metric: "+28% over 30 days", excerpt: "Searches for the question and adjacent grief queries have increased." },
-      { source: "Reddit", title: "Recurring pastoral question", excerpt: "Multiple high-engagement threads ask for an answer that does not feel dismissive." },
-      { source: "YouTube", title: "Long-form interest", metric: "High comment velocity", excerpt: "Viewers engage most with answers that make room for ambiguity." },
-    ],
-    status: "unread",
-    createdAt: "2h ago",
-    document: businessDocuments[1],
-  },
-  {
-    id: "agents",
-    type: "trend",
-    category: "AI",
-    title: "Are agents replacing SaaS?",
-    summary: "Conversation volume around this argument has increased across AI founder communities.",
-    why: "The claim is gaining attention, but the strongest angle is likely a useful distinction rather than a hot take.",
-    suggestedAngle: "Agents may change software interfaces, but they do not erase the systems businesses still need to trust.",
-    evidence: [
-      { source: "X", title: "Founder discussion", metric: "1.8× mentions", excerpt: "Operators are debating whether agent workflows replace point solutions." },
-      { source: "Hacker News", title: "Practical skepticism", excerpt: "The highest-quality responses focus on accountability, data, and workflow ownership." },
-      { source: "Newsletters", title: "Repeated framing", excerpt: "Several creator-led newsletters published versions of this argument this week." },
-    ],
-    status: "unread",
-    createdAt: "43m ago",
-    document: businessDocuments[2],
-  },
-  {
-    id: "progress",
-    type: "project_activity",
-    category: "POYSIS",
-    title: "You made meaningful progress today.",
-    summary: "Your project activity suggests a potentially interesting build-in-public story.",
-    why: "You moved from model decisions to a working content workflow. The shift itself is useful to other builders.",
-    suggestedAngle: "The tool became useful when it stopped generating ideas and started preserving decisions.",
-    evidence: [{ source: "Poysis Workspace", title: "Project activity", excerpt: "Business model, content workflow, and export work were all updated today." }],
-    status: "read",
-    createdAt: "Today",
-    document: businessDocuments[0],
-  },
-];
 
 const actionLabels = {
   write_post: "Create SEO Brief",
@@ -83,8 +34,8 @@ export default function StudioApp({ document, onOpenBusinessModel, hideSidebar =
   const view = activeView ?? internalView;
   const setView = onViewChange ?? setInternalView;
   const [activeBusinessId, setActiveBusinessId] = useState(document?.id ?? null);
-  const [items, setItems] = useState(() => document ? initialInbox.map((item) => ({ ...item, document })) : initialInbox);
-  const [activeId, setActiveId] = useState("suffering");
+  const [items, setItems] = useState([]);
+  const [activeId, setActiveId] = useState(null);
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [reply, setReply] = useState("");

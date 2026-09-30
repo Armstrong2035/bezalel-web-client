@@ -5,6 +5,9 @@ import { apiFetch } from "@/firebase/apiFetch";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/app/hooks/useAuth";
 import ThinkingBlock from "./ThinkingBlock";
+import ChatMarkdown from "./ChatMarkdown";
+import ContextChatAction from "./ContextChatAction";
+import CanvasChatEdits from "./CanvasChatEdits";
 
 const REASONING_PREFIX = "__REASONING__:";
 
@@ -39,6 +42,7 @@ export default function DocChat({
   initialMessage,
   ideas = [],
   onDecisionChange,
+  onOpenContext,
   workspaceMode = false,
   onClose,
 }) {
@@ -387,6 +391,11 @@ export default function DocChat({
             </p>
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {!workspaceMode && onOpenContext && (
+              <button onClick={onOpenContext} disabled={isStreaming} style={{ padding: "5px 10px", fontSize: 12, border: "1px solid #d6d6ce", borderRadius: 5, background: "white", color: "#333", cursor: "pointer" }}>
+                {hasContext ? "Edit context" : "Add context"}
+              </button>
+            )}
             {messages.length > 0 && (
               <button
                 onClick={handleClearHistory}
@@ -438,7 +447,7 @@ export default function DocChat({
               flexShrink: 0,
             }}
           >
-            ⚠️ Add document context first so the AI understands your business.
+            ⚠️ Add business context for tailored advice. You can still ask about Bezalel or plan your next steps.
           </div>
         )}
 
@@ -495,9 +504,13 @@ export default function DocChat({
             borderTop: "1px solid #e8e8e6",
             padding: "12px 16px 16px",
             flexShrink: 0,
+            maxHeight: "60vh",
+            overflowY: "auto",
             background: "#fafafa",
           }}
           >
+          {!workspaceMode && <ContextChatAction key={`context:${docId}`} docId={docId} userId={user?.uid} messages={messages} disabled={isStreaming || isLoadingHistory} />}
+          {!workspaceMode && <CanvasChatEdits key={`canvas:${docId}`} docId={docId} userId={user?.uid} messages={messages} disabled={isStreaming || isLoadingHistory} />}
           {!workspaceMode && showCanvasAction && (
             <div
               style={{
@@ -566,7 +579,7 @@ export default function DocChat({
             disabled={!hasContext || ideas.length === 0}
             style={canvasActionToggleStyle}
           >
-            {showCanvasAction ? "× Close canvas action" : "✦ Change the canvas from chat"}
+            {showCanvasAction ? "× Close canvas action" : "✦ Change canvas status"}
           </button>
           )}
           <div
@@ -596,9 +609,9 @@ export default function DocChat({
                   ? "Think across your work…"
                   : hasContext
                   ? "Ask about your canvas, spot contradictions, brainstorm…"
-                  : "Add context to start chatting"
+                  : "Ask about Bezalel or describe your business idea"
               }
-              disabled={!hasContext || isLoadingHistory}
+              disabled={isLoadingHistory}
               rows={1}
               style={{
                 flex: 1,
@@ -641,7 +654,7 @@ export default function DocChat({
             ) : (
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || !hasContext}
+                disabled={!input.trim() || isLoadingHistory}
                 style={{
                   flexShrink: 0,
                   width: 32,
@@ -649,14 +662,14 @@ export default function DocChat({
                   borderRadius: 7,
                   border: "none",
                   background:
-                    input.trim() && hasContext ? "#1a1a1a" : "#e8e8e6",
+                    input.trim() && !isLoadingHistory ? "#1a1a1a" : "#e8e8e6",
                   cursor:
-                    input.trim() && hasContext ? "pointer" : "not-allowed",
+                    input.trim() && !isLoadingHistory ? "pointer" : "not-allowed",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 14,
-                  color: input.trim() && hasContext ? "white" : "#bbb",
+                  color: input.trim() && !isLoadingHistory ? "white" : "#bbb",
                 }}
               >
                 ↑
@@ -758,11 +771,12 @@ function MessageBubble({ message }) {
             color: isUser ? "white" : "#1a1a1a",
             fontSize: 13,
             lineHeight: 1.6,
-            whiteSpace: "pre-wrap",
+            whiteSpace: isUser ? "pre-wrap" : "normal",
+            minWidth: 0,
             wordBreak: "break-word",
           }}
         >
-          {message.content}
+          {isUser ? message.content : <ChatMarkdown>{message.content}</ChatMarkdown>}
           {isStreaming && !message.reasoningStreaming && (
             <span
               style={{

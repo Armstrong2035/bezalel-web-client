@@ -21,7 +21,7 @@ function subscribe(listener) {
         workspaceUserId = uid;
         useDocumentStore.setState({ documents: [], documentsLoaded: false, activeDocumentId: null, openSectionKey: null });
         useSegmentsStore.setState({ segments: {}, acceptedIdeas: [] });
-        useInboxStore.setState({ messages: [], seededUid: null });
+        useInboxStore.setState({ messages: [] });
       }
       snapshot = { user, loading: false };
       listeners.forEach(notify => notify());

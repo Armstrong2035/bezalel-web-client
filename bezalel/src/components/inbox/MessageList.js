@@ -1,6 +1,6 @@
 "use client";
 
-import { MESSAGE_TYPE_META, formatRelativeTime } from "@/stores/inboxSample";
+import { MESSAGE_TYPE_META, formatRelativeTime } from "@/stores/inboxMetadata";
 
 /**
  * Middle pane of the email shell: a searchable, filterable list of messages.

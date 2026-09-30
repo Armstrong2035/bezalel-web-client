@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "@/components/loading/NavigationLink";
 import { useLoadingRouter as useRouter } from "@/app/hooks/useNavigationLoading";
-import { MESSAGE_TYPE_META } from "@/stores/inboxSample";
+import { MESSAGE_TYPE_META } from "@/stores/inboxMetadata";
 
 /**
  * Left rail of the email shell. Lists the shared views (Inbox, Needs action)
@@ -16,12 +16,15 @@ export default function InboxRail({
   activeFilter,
   onSelectFilter,
   onOpenDocument,
+  onOpenPlanning,
+  planningActive,
   onOpenDigest,
   digestActive,
   collapsed,
   onToggleCollapsed,
   onCreateDocument,
   onDeleteDocument,
+  onRenameDocument,
   creating,
   deletingId,
   error,
@@ -29,6 +32,8 @@ export default function InboxRail({
   const router = useRouter();
   const [showNewInput, setShowNewInput] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [renamingId, setRenamingId] = useState(null);
+  const [renameDraft, setRenameDraft] = useState("");
 
   const { unreadTotal, actionTotal, unreadByDoc } = useMemo(() => {
     let unread = 0;
@@ -50,6 +55,13 @@ export default function InboxRail({
     onCreateDocument(newTitle.trim() || "Untitled");
     setNewTitle("");
     setShowNewInput(false);
+  };
+
+  const submitRename = () => {
+    const id = renamingId;
+    setRenamingId(null);
+    const trimmed = renameDraft.trim();
+    if (trimmed && id) onRenameDocument?.(id, trimmed);
   };
 
   return (
@@ -104,6 +116,7 @@ export default function InboxRail({
 
       {collapsed ? (
         <div style={{ padding: "14px 8px", display: "grid", gap: 8 }}>
+          <button onClick={onOpenPlanning} aria-label="Business planning" title="Business planning" style={railStyles.collapsedBtn}>▦</button>
           <button onClick={() => onSelectFilter("inbox")} aria-label="Inbox" title="Inbox" style={railStyles.collapsedBtn}>
             📥
           </button>
@@ -128,15 +141,16 @@ export default function InboxRail({
 
           {/* Shared views */}
           <nav style={{ padding: "10px 8px 4px" }}>
+            <RailItem active={planningActive} onClick={onOpenPlanning} icon="▦" label="Business planning" />
             <RailItem
-              active={activeFilter === "inbox"}
+              active={!planningActive && !digestActive && activeFilter === "inbox"}
               onClick={() => onSelectFilter("inbox")}
               icon="📥"
               label="Inbox"
               badge={unreadTotal}
             />
             <RailItem
-              active={activeFilter === "needs_action"}
+              active={!planningActive && !digestActive && activeFilter === "needs_action"}
               onClick={() => onSelectFilter("needs_action")}
               icon="⚡"
               label="Needs action"
@@ -170,31 +184,62 @@ export default function InboxRail({
                 No documents yet.
               </p>
             )}
-            {documents.map((doc) => (
-              <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 2, position: "relative" }}>
-                <RailItem
-                  active={activeFilter === `doc:${doc.id}`}
-                  onClick={() => onSelectFilter(`doc:${doc.id}`)}
-                  icon="📄"
-                  label={doc.title || "Untitled"}
-                  badge={unreadByDoc.get(doc.id) ?? 0}
-                  onOpen={() => onOpenDocument?.(doc.id)}
-                />
-                <button
-                  onClick={() => {
-                    if (confirm(`Delete "${doc.title || "Untitled"}"? This cannot be undone.`)) {
-                      onDeleteDocument(doc.id);
-                    }
-                  }}
-                  disabled={deletingId !== null}
-                  title="Delete document"
-                  aria-label={`Delete ${doc.title || "Untitled"}`}
-                  style={railStyles.deleteBtn}
-                >
-                  {deletingId === doc.id ? "…" : "×"}
-                </button>
-              </div>
-            ))}
+            {documents.map((doc) => {
+              const isRenaming = renamingId === doc.id;
+              return (
+                <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 2, position: "relative" }}>
+                  {isRenaming ? (
+                    <input
+                      autoFocus
+                      value={renameDraft}
+                      onChange={(e) => setRenameDraft(e.target.value)}
+                      onBlur={submitRename}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.target.blur();
+                        if (e.key === "Escape") setRenamingId(null);
+                      }}
+                      aria-label="Rename document"
+                      style={{ ...railStyles.input, flex: 1, marginRight: 2 }}
+                    />
+                  ) : (
+                    <RailItem
+                      active={activeFilter === `doc:${doc.id}`}
+                      onClick={() => onSelectFilter(`doc:${doc.id}`)}
+                      icon="📄"
+                      label={doc.title || "Untitled"}
+                      badge={unreadByDoc.get(doc.id) ?? 0}
+                      onOpen={() => onOpenDocument?.(doc.id)}
+                    />
+                  )}
+                  {!isRenaming && (
+                    <button
+                      onClick={() => {
+                        setRenamingId(doc.id);
+                        setRenameDraft(doc.title || "Untitled");
+                      }}
+                      title="Rename document"
+                      aria-label={`Rename ${doc.title || "Untitled"}`}
+                      style={railStyles.renameBtn}
+                    >
+                      ✎
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      if (confirm(`Delete "${doc.title || "Untitled"}"? This cannot be undone.`)) {
+                        onDeleteDocument(doc.id);
+                      }
+                    }}
+                    disabled={deletingId !== null}
+                    title="Delete document"
+                    aria-label={`Delete ${doc.title || "Untitled"}`}
+                    style={railStyles.deleteBtn}
+                  >
+                    {deletingId === doc.id ? "…" : "×"}
+                  </button>
+                </div>
+              );
+            })}
           </nav>
 
           {/* New document */}
@@ -336,6 +381,15 @@ const railStyles = {
     color: "#c5c5c2",
     fontSize: 16,
     padding: "4px 6px",
+    flexShrink: 0,
+  },
+  renameBtn: {
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    color: "#b5b5b0",
+    fontSize: 14,
+    padding: "4px 4px",
     flexShrink: 0,
   },
   input: {

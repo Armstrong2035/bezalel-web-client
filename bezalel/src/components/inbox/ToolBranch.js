@@ -1,6 +1,6 @@
 "use client";
 
-import { MESSAGE_TYPE_META } from "@/stores/inboxSample";
+import { MESSAGE_TYPE_META } from "@/stores/inboxMetadata";
 
 const CARD_W = 244;
 const CARD_H = 116;

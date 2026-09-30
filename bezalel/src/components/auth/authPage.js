@@ -2,11 +2,13 @@ import Link from "@/components/loading/NavigationLink";
 import GoogleAuthProvider from "./GoogleAuthProvider";
 import RollingMascot from "@/components/brand/RollingMascot";
 import styles from "./auth.module.css";
+import AuthGuestGuard from "./AuthGuestGuard";
 
-// The shell renders on the server; only the sign-in action needs hydration.
+// Keep the shell server-rendered, with session checks handled by the guest guard.
 export default function AuthPage({ cta }) {
   const signingUp = cta === "Sign up";
   return (
+    <AuthGuestGuard>
     <div className={styles.page}>
       <header className={styles.header}>
         <Link href="/" className={styles.brand} aria-label="Bezalel home"><span className={styles.mark}>b.</span> bezalel <span className={styles.beta}>BETA</span></Link>
@@ -39,5 +41,6 @@ export default function AuthPage({ cta }) {
       </main>
       <footer className={styles.footer}><span>Your business cofounder.</span><span>Think it through. Keep building.</span></footer>
     </div>
+    </AuthGuestGuard>
   );
 }

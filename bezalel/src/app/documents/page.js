@@ -14,6 +14,7 @@ import InboxRail from "@/components/inbox/InboxRail";
 import MessageList from "@/components/inbox/MessageList";
 import MessageDetail from "@/components/inbox/MessageDetail";
 import ToolBranch from "@/components/inbox/ToolBranch";
+import BusinessPlanning from "@/components/inbox/BusinessPlanning";
 import DigestPanel from "@/components/inbox/DigestPanel";
 
 const DocumentWorkspace = dynamic(() => import("@/components/document/DocumentWorkspace"), {
@@ -45,10 +46,10 @@ function InboxShell() {
   const setDocuments = useDocumentStore((state) => state.setDocuments);
   const addDocument = useDocumentStore((state) => state.addDocument);
   const removeDocument = useDocumentStore((state) => state.removeDocument);
+  const updateDocument = useDocumentStore((state) => state.updateDocument);
 
   const messages = useInboxStore((state) => state.messages);
   const setMessages = useInboxStore((state) => state.setMessages);
-  const seedSampleMessages = useInboxStore((state) => state.seedSampleMessages);
   const markRead = useInboxStore((state) => state.markRead);
   const markUnread = useInboxStore((state) => state.markUnread);
   const markAllRead = useInboxStore((state) => state.markAllRead);
@@ -68,6 +69,8 @@ function InboxShell() {
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [branch, setBranch] = useState(null);
   const [digestOpen, setDigestOpen] = useState(false);
+  const [planningOpen, setPlanningOpen] = useState(false);
+  const [activityError, setActivityError] = useState("");
 
   const paneRef = useRef(null);
 
@@ -88,7 +91,7 @@ function InboxShell() {
 
   // Auth guard
   useEffect(() => {
-    if (!authLoading && !user) router.push("/auth/signin");
+    if (!authLoading && !user) router.replace("/auth/signin");
   }, [user, authLoading, router]);
 
   // Load documents
@@ -119,30 +122,26 @@ function InboxShell() {
     };
   }, [user?.uid, setDocuments, loadAttempt]);
 
-  // Load real activity from Firestore; fall back to sample messages when the
-  // inbox has no durable messages yet.
+  // Empty inboxes stay empty; failed reads are surfaced without demo messages.
   useEffect(() => {
     if (!user?.uid || !documentsLoaded) return;
     const controller = new AbortController();
+    let active = true;
+    setActivityError("");
     const load = async () => {
       try {
-        const res = await apiFetch(`/api/activity?userId=${user.uid}`, {
-          signal: controller.signal,
-        });
-        if (!res.ok) {
-          seedSampleMessages(user.uid, documents);
-          return;
-        }
+        const res = await apiFetch(`/api/activity?userId=${user.uid}`, { signal: controller.signal });
+        if (!res.ok) throw new Error("Could not load your inbox. Please retry.");
         const { messages: real } = await res.json();
-        if (real?.length) setMessages(real);
-        else seedSampleMessages(user.uid, documents);
+        if (!Array.isArray(real)) throw new Error("Could not load your inbox. Please retry.");
+        if (active) setMessages(real);
       } catch (err) {
-        if (err.name !== "AbortError") seedSampleMessages(user.uid, documents);
+        if (active && err.name !== "AbortError") setActivityError(err.message);
       }
     };
     load();
-    return () => controller.abort();
-  }, [user?.uid, documentsLoaded, documents, seedSampleMessages, setMessages]);
+    return () => { active = false; controller.abort(); };
+  }, [user?.uid, documentsLoaded, setMessages, loadAttempt]);
 
   const openDoc = (id, tool) => {
     if (!id) return;
@@ -175,6 +174,24 @@ function InboxShell() {
       setError(err.message);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleRename = async (docId, title) => {
+    if (!user?.uid) return;
+    const trimmed = (title ?? "").trim();
+    if (!trimmed) return;
+    setError("");
+    try {
+      const response = await apiFetch(`/api/documents/${docId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.uid, title: trimmed }),
+      });
+      if (!response.ok) throw new Error("Could not rename the document. Please retry.");
+      updateDocument(docId, { title: trimmed });
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -244,6 +261,7 @@ function InboxShell() {
   };
 
   const handleSelect = (id) => {
+    setPlanningOpen(false);
     setSelectedMessageId(id);
     setDigestOpen(false);
     markRead(id);
@@ -251,12 +269,21 @@ function InboxShell() {
     if (openDocId) closeDoc();
   };
 
+  const handleOpenPlanning = () => {
+    setPlanningOpen(true);
+    setDigestOpen(false);
+    if (openDocId) closeDoc();
+  };
+
   const handleOpenDigest = () => {
+    setPlanningOpen(false);
     setDigestOpen(true);
     if (openDocId) closeDoc();
   };
 
   const handleSelectFilter = (filter) => {
+    setPlanningOpen(false);
+    if (openDocId) closeDoc();
     setDigestOpen(false);
     setActiveFilter(filter);
   };
@@ -303,18 +330,21 @@ function InboxShell() {
         activeFilter={activeFilter}
         onSelectFilter={handleSelectFilter}
         onOpenDocument={(id) => openDoc(id)}
+        onOpenPlanning={handleOpenPlanning}
+        planningActive={planningOpen}
         onOpenDigest={handleOpenDigest}
         digestActive={digestOpen}
         collapsed={collapsed}
         onToggleCollapsed={toggleCollapsed}
         onCreateDocument={handleCreate}
         onDeleteDocument={handleDelete}
+        onRenameDocument={handleRename}
         creating={creating}
         deletingId={deletingId}
         error={error}
       />
 
-      <MessageList
+      {!planningOpen && <MessageList
         messages={filteredMessages}
         selectedId={selectedMessage?.id ?? null}
         onSelect={handleSelect}
@@ -324,14 +354,19 @@ function InboxShell() {
         onTypeFilterChange={setTypeFilter}
         onMarkAllRead={handleMarkAllRead}
         unreadCount={unreadCount}
-      />
+      />}
 
       <div ref={paneRef} style={{ flex: 1, minWidth: 0, display: "flex", position: "relative" }}>
-        {digestOpen ? (
+        {planningOpen ? (
+          <BusinessPlanning documents={documents} onOpen={(id) => openDoc(id, "canvas")} onCreate={handleCreate} creating={creating} error={error} />
+        ) : activityError && !digestOpen ? (
+          <section style={{ padding: 32 }}><p role="alert">{activityError}</p><button onClick={() => setLoadAttempt(value => value + 1)}>Retry inbox</button><button onClick={handleOpenPlanning}>Open business planning</button></section>
+        ) : digestOpen ? (
           <DigestPanel />
         ) : (
           <MessageDetail
             message={selectedMessage}
+            onOpenPlanning={handleOpenPlanning}
             onOpen={() => handleOpen(selectedMessage)}
             onMarkRead={() => {
               if (!selectedMessage) return;

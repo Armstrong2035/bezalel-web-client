@@ -1,6 +1,6 @@
 "use client";
 
-import { MESSAGE_TYPE_META, formatRelativeTime } from "@/stores/inboxSample";
+import { MESSAGE_TYPE_META, formatRelativeTime } from "@/stores/inboxMetadata";
 
 /**
  * Reading pane of the email shell. Presents one message with email-style
@@ -13,6 +13,7 @@ export default function MessageDetail({
   onMarkRead,
   onMarkUnread,
   onDismiss,
+  onOpenPlanning,
 }) {
   if (!message) {
     return (
@@ -25,6 +26,7 @@ export default function MessageDetail({
           <p style={{ margin: "8px 0 0", fontSize: 13, color: "#aaa", maxWidth: 340 }}>
             Prospects, topics to address, and automation results will appear here.
           </p>
+          <button type="button" onClick={onOpenPlanning} style={{ marginTop: 20, padding: "12px 18px", border: "1px solid #d6dfc5", borderRadius: 7, background: "#edf3dc", color: "#272e22", font: "inherit", fontSize: 13, cursor: "pointer" }}>Open business planning</button>
         </div>
       </section>
     );

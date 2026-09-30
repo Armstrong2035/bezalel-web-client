@@ -307,6 +307,9 @@ export default function DocumentContext({
                 <div
                   style={{ display: "flex", flexWrap: "wrap", gap: 6 }}
                 >
+                  {draft[q.id] && !q.options.includes(draft[q.id]) && (
+                    <p style={{ width: "100%", margin: "0 0 6px", whiteSpace: "pre-wrap", color: "#333" }}>Current value: {draft[q.id]}</p>
+                  )}
                   {q.options.map((opt) => {
                     const isSelected = draft[q.id] === opt;
                     return (

@@ -38,6 +38,7 @@ export default function DocumentWorkspace({ docId, mode = "standalone", tool = "
   const setSegments = useSegmentsStore((state) => state.replaceSegments);
   const documents = useDocumentStore((state) => state.documents);
   const upsertDocument = useDocumentStore((state) => state.upsertDocument);
+  const updateDocument = useDocumentStore((state) => state.updateDocument);
   const setActiveDocumentId = useDocumentStore(
     (state) => state.setActiveDocumentId,
   );
@@ -62,6 +63,8 @@ export default function DocumentWorkspace({ docId, mode = "standalone", tool = "
   const [workspace, setWorkspace] = useState("validation");
   const [validationView, setValidationView] = useState("overview");
   const [locked, setLocked] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
 
   // ── derived ──────────────────────────────────────────────────────
   const activeDoc = documents.find((d) => d.id === docId) ?? loadedDocument;
@@ -209,6 +212,33 @@ export default function DocumentWorkspace({ docId, mode = "standalone", tool = "
     setOpenPanelKey(null);
     setContextRequired(false);
     setChatInitialMessage(null);
+  };
+
+  const startRenameTitle = () => {
+    setTitleDraft(activeDoc?.title ?? "Untitled");
+    setEditingTitle(true);
+  };
+
+  const commitRenameTitle = async () => {
+    setEditingTitle(false);
+    const currentTitle = activeDoc?.title ?? "Untitled";
+    const trimmed = titleDraft.trim();
+    if (!trimmed || trimmed === currentTitle) {
+      setTitleDraft(currentTitle);
+      return;
+    }
+    if (!user?.uid) return;
+    try {
+      const response = await apiFetch(`/api/documents/${docId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.uid, title: trimmed }),
+      });
+      if (!response.ok) throw new Error("Could not rename the document. Please retry.");
+      updateDocument(docId, { title: trimmed });
+    } catch (err) {
+      setActionError(err.message);
+    }
   };
 
   const handleContextSaved = (savedContext) => {
@@ -518,7 +548,7 @@ export default function DocumentWorkspace({ docId, mode = "standalone", tool = "
             onResearch={handleResearchIdea}
             onRegenerate={() => handleRegenerate(openPanelKey)}
             isRegenerating={regeneratingSectionKey === openPanelKey}
-            onOpenChat={mode === "modal" ? undefined : (prefill) => handleOpenChat(prefill)}
+            onOpenChat={(prefill) => handleOpenChat(prefill)}
           />
         )}
 
@@ -532,7 +562,7 @@ export default function DocumentWorkspace({ docId, mode = "standalone", tool = "
         />
       )}
 
-      {mode !== "modal" && openPanelKey === "chat" && (
+      {openPanelKey === "chat" && (
         <DocChat
           docId={docId}
           documentSnapshot={{
@@ -543,6 +573,7 @@ export default function DocumentWorkspace({ docId, mode = "standalone", tool = "
           initialMessage={chatInitialMessage}
           ideas={Object.values(segments ?? {})}
           onDecisionChange={handleDecisionChange}
+          onOpenContext={() => handleOpenContext(false)}
           onClose={handleClosePanel}
         />
       )}
@@ -631,19 +662,57 @@ export default function DocumentWorkspace({ docId, mode = "standalone", tool = "
               background: "#fbfbfa",
             }}
           >
-            <span
-              style={{
-                fontSize: 15,
-                fontWeight: 700,
-                color: "#1a1a1a",
-                minWidth: 0,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              📄 {activeDoc?.title ?? "Untitled"}
-            </span>
+            {editingTitle ? (
+              <input
+                autoFocus
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onBlur={commitRenameTitle}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.target.blur();
+                  if (e.key === "Escape") {
+                    setEditingTitle(false);
+                    setTitleDraft(activeDoc?.title ?? "Untitled");
+                  }
+                }}
+                aria-label="Document title"
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: "#1a1a1a",
+                  minWidth: 0,
+                  maxWidth: 320,
+                  border: "1px solid #ddd",
+                  borderRadius: 6,
+                  padding: "4px 8px",
+                  outline: "none",
+                  fontFamily: "inherit",
+                }}
+              />
+            ) : (
+              <button
+                onClick={startRenameTitle}
+                title="Click to rename"
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: "#1a1a1a",
+                  minWidth: 0,
+                  maxWidth: 320,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  background: "none",
+                  border: "1px solid transparent",
+                  borderRadius: 6,
+                  padding: "4px 8px",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                📄 {activeDoc?.title ?? "Untitled"}
+              </button>
+            )}
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
               <div
                 style={{
@@ -661,6 +730,20 @@ export default function DocumentWorkspace({ docId, mode = "standalone", tool = "
                   Outreach
                 </button>
               </div>
+              <button
+                onClick={() => handleOpenContext(false)}
+                aria-label={hasContext ? "Edit business context" : "Add business context"}
+                style={{ ...headerIconBtn, fontSize: 13, fontWeight: 600 }}
+              >
+                {hasContext ? "Edit context" : "Add context"}
+              </button>
+              <button
+                onClick={() => handleOpenChat(null)}
+                aria-label="Open canvas chat"
+                style={{ ...headerIconBtn, fontSize: 13, fontWeight: 600 }}
+              >
+                Chat
+              </button>
               <button
                 onClick={() => setLocked((value) => !value)}
                 title={locked ? "Unlock — show your inbox behind this view" : "Lock — focus on this tool full screen"}
