@@ -68,6 +68,10 @@ body {
 }
 
 @media (max-width: 760px) {
+  .studio-overview-grid { grid-template-columns: 1fr !important; }
+  .studio-overview-card { grid-column: span 1 !important; }
+  .studio-carousel-heading { display: block !important; }
+  .studio-carousel-rail { grid-template-columns: repeat(5, minmax(190px, 1fr)) !important; }
   .studio-app {
     display: block !important;
   }

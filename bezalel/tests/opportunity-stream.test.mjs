@@ -57,6 +57,51 @@ function responseFor(text) {
   const bytes = new TextEncoder().encode(text);
   return new Response(new ReadableStream({ start(c) { for (const byte of bytes) c.enqueue(Uint8Array.of(byte)); c.close(); } }));
 }
+
+test("Explorium excludes saved IDs, skips old LinkedIn records and pages to new people", async () => {
+  const savedId = "a".repeat(40), newId = "b".repeat(40);
+  const requests = [], events = [], saved = [];
+  const existingPeople = [{ prospect_id: savedId }, { name: "Old", sources: ["https://www.linkedin.com/in/old/?x=1"] }];
+  await runPipeline({ ...body, provider: "explorium", target: { jobTitles: ["Founder"] } }, e => events.push(e), undefined, {
+    existingPeople,
+    savePerson: async person => { saved.push(person); return true; },
+    client: mockClient(JSON.stringify(person), []),
+    fetch: async (url, options) => {
+      const payload = JSON.parse(options.body);
+      requests.push({ url, payload });
+      if (url.endsWith("/enrich")) return Response.json({ data: [{ summary: "Evidence" }] });
+      return Response.json(payload.next_cursor ? { data: [{ prospect_id: newId }], page: { next_cursor: null } } : {
+        data: [{ prospect_id: savedId }, { prospect_id: "c".repeat(40), linkedin: "https://linkedin.com/in/old" }], page: { next_cursor: "next" },
+      });
+    },
+  });
+  assert.deepEqual(requests[0].payload.exclude, [savedId]);
+  assert.equal(requests[1].payload.next_cursor, "next");
+  assert.equal(requests.filter(r => r.url.endsWith("/enrich")).length, 1);
+  assert.equal(saved[0].prospect_id, newId);
+  assert.equal(events.find(e => e.type === "person").person.prospect_id, newId);
+  assert.deepEqual(events.at(-1).stats, { pages: 2, received: 3, skipped: 2, enrichmentRequests: 1 });
+});
+
+test("Explorium does not publish when a concurrent search already saved the person", async () => {
+  const events = [];
+  await runPipeline({ ...body, provider: "explorium", target: { jobTitles: ["Founder"] } }, e => events.push(e), undefined, {
+    client: mockClient(JSON.stringify(person), []), savePerson: async () => false,
+    fetch: async () => Response.json({ data: [{ prospect_id: "test" }], page: { next_cursor: "repeated" } }),
+  });
+  assert.equal(events.at(-1).count, 0);
+  assert.equal(events.at(-1).stats.pages, 2);
+  assert.equal(events.filter(e => e.type === "person").length, 0);
+});
+
+test("Explorium never emits a profile if durable history saving fails", async () => {
+  const events = [];
+  await assert.rejects(runPipeline({ ...body, provider: "explorium", target: { jobTitles: ["Founder"] } }, e => events.push(e), undefined, {
+    client: mockClient(JSON.stringify(person), []), savePerson: async () => { throw new Error("Storage unavailable"); },
+    fetch: async () => Response.json({ data: [{ prospect_id: "test" }] }),
+  }), /Storage unavailable/);
+  assert.equal(events.filter(e => e.type === "person").length, 0);
+});
 test("client decodes split JSON and UTF-8, including the final unterminated line", async () => {
   const events = [];
   await readResearchStream(responseFor(JSON.stringify({ type: "person", person: { name: "Amélie" } }) + '\n{"type":"done"}'), e => events.push(e));

@@ -1,28 +1,12 @@
-"use client";
+import DigestLanding from "@/components/landing/DigestLanding";
 
-import { Box } from "@mui/material";
-import LandingNav from "@/components/landing/LandingNav";
-import Hero from "@/components/landing/hero/Hero";
-import HowItWorks from "@/components/landing/HowItWorks";
-import LandingSections from "@/components/landing/LandingSections";
-
-const fontFamily =
-  "'Poppins', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+export const metadata = {
+  title: "Bezalel — Your AI Business Cofounder",
+  description: "A thinking partner for your business. Connect your goals, research, and opportunities, and use your daily digest to decide what matters and what to do next.",
+  openGraph: { title: "Bezalel — Your AI Business Cofounder", description: "Know what matters. Build what’s next. A thinking partner for your goals, research, and business decisions." },
+  twitter: { title: "Bezalel — Your AI Business Cofounder", description: "Your business, with a little more perspective. Turn research and opportunities into considered next steps." },
+};
 
 export default function Home() {
-  return (
-    <Box
-      sx={{
-        bgcolor: "#ffffff",
-        color: "#1a1a1a",
-        minHeight: "100vh",
-        fontFamily,
-      }}
-    >
-      <LandingNav />
-      <Hero />
-      <HowItWorks />
-      <LandingSections />
-    </Box>
-  );
+  return <DigestLanding />;
 }

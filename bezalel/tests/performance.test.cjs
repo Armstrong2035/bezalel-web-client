@@ -23,6 +23,7 @@ test('auth consumers share one listener and clear private data when the account 
     '../../firebase/auth': { auth: {} },
     '@/stores/documentStore': { useDocumentStore: { setState: state => resets.push(state) } },
     '@/stores/segmentsStore': { useSegmentsStore: { setState: () => {} } },
+    '@/stores/inboxStore': { useInboxStore: { setState: () => {} } },
   });
   const first = useAuth();
   const second = useAuth();

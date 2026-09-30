@@ -1,3 +1,4 @@
+import { personKeys } from "./personIdentity.mjs";
 import OpenAI from "openai";
 import { exploriumTargetOptions, formatExploriumError, hasDiscoveryCriteria, normalizeExploriumFilters, targetToExploriumFilters, targetToText } from "./exploriumAdapter.mjs";
 
@@ -31,13 +32,24 @@ export async function runPipeline(body, emit, signal, deps = {}) {
   const { provider, prompt, icp } = body;
   const targetText = targetToText(body.target);
   let count = 0;
-  const seen = new Set();
-  const publish = line => {
+  const seen = new Set((deps.existingPeople || []).flatMap(personKeys));
+  let currentProspect = null;
+  let prospectPublished = false;
+  const stats = { pages: 0, received: 0, skipped: 0, enrichmentRequests: 0 };
+  const publish = async line => {
     if (!line.trim()) return;
     const person = parsePerson(line, provider);
-    const key = `${person.name}|${person.role}`.toLowerCase();
-    if (count >= 5 || seen.has(key)) return;
-    seen.add(key); count++;
+    if (currentProspect) {
+      if (prospectPublished) return;
+      person.prospect_id = currentProspect.prospect_id;
+      if (currentProspect.linkedin) person.linkedin = currentProspect.linkedin;
+    }
+    const keys = personKeys(person);
+    if (count >= 5) return;
+    if (keys.some(key => seen.has(key))) { stats.skipped++; return; }
+    if (deps.savePerson && !await deps.savePerson(person)) { stats.skipped++; return; }
+    keys.forEach(key => seen.add(key)); count++;
+    prospectPublished = true;
     emit({ type: "person", person });
   };
   const context = JSON.stringify({ target: body.target ?? {}, targetText, icp, researchIntent: prompt });
@@ -53,7 +65,7 @@ export async function runPipeline(body, emit, signal, deps = {}) {
       if (event.type === "response.output_text.delta") {
         pending += event.delta;
         const lines = pending.split(/\r?\n/); pending = lines.pop();
-        for (const line of lines) publish(line);
+        for (const line of lines) await publish(line);
       } else if (/^response\.(web_search_call|mcp_call)\.in_progress$/.test(event.type)) {
         emit({ type: "progress", message: provider === "vibe" ? "Vibe Prospecting is querying profiles…" : "Searching public sources…" });
       } else if (event.type === "response.completed") {
@@ -64,7 +76,7 @@ export async function runPipeline(body, emit, signal, deps = {}) {
       }
     }
     if (!completed) throw new Error("The provider stream ended unexpectedly.");
-    if (pending.trim()) publish(pending);
+    if (pending.trim()) await publish(pending);
   }
   async function explorium(path, payload) {
     signal?.throwIfAborted();
@@ -90,20 +102,45 @@ export async function runPipeline(body, emit, signal, deps = {}) {
       filters = JSON.parse(plan.output_text.replace(/^\x60\x60\x60json\s*|\x60\x60\x60\s*$/g, ""));
     }
     filters = normalizeExploriumFilters(filters);
-    emit({ type: "progress", message: "Finding up to five matching people in Explorium…" });
-    const found = await explorium("/v2/prospects", { mode: "full", page_size: 5, filters, next_cursor: null });
-    for (const prospect of (found.data || []).slice(0, 5)) {
-      if (!prospect.prospect_id) continue;
-      emit({ type: "progress", message: `Researching ${prospect.full_name || "matched prospect"}…` });
-      const result = await explorium("/v2/prospects/research/enrich", { prospects: [{ prospect_id: prospect.prospect_id }], parameters: { query: `${instructions} Research this person against ${context}. Return professional context, recent signal, conversation hook and source URLs.`, output_schema: { type: "object", properties: { summary: { type: "string" }, signal: { type: "string" }, hook: { type: "string" }, sources: { type: "array", items: { type: "string" } } }, required: ["summary", "signal", "hook", "sources"] } } });
-      const row = result.data?.[0];
-      if (!row || row._error) { emit({ type: "progress", message: "One prospect could not be enriched; continuing with remaining matches." }); continue; }
-      await generate(`Format and assess this single retrieved prospect against ${context}. No additional research. Evidence: ${JSON.stringify({ ...prospect, research: row })}`);
-    }
+    const exclude = [...new Set((deps.existingPeople || []).map(person => person.prospect_id))]
+      .filter(id => typeof id === "string" && /^[a-f0-9]{40}$/.test(id)).slice(0, 1000);
+    let cursor = null;
+    const cursors = new Set();
+    const attempted = new Set();
+    // Bound provider work when a target contains mostly old or unenrichable records.
+    do {
+      emit({ type: "progress", message: "Finding up to five new matching people in Explorium..." });
+      const found = await explorium("/v2/prospects", { mode: "full", page_size: 5, filters, next_cursor: cursor, ...(exclude.length ? { exclude } : {}) });
+      if (!Array.isArray(found.data)) throw new Error("Explorium returned an invalid prospect page.");
+      stats.pages++;
+      stats.received += found.data.length;
+      emit({ type: "discovery", ...stats, pageReceived: found.data.length });
+      for (const prospect of found.data) {
+        if (count >= 5) break;
+        if (!prospect.prospect_id) continue;
+        if (attempted.has(prospect.prospect_id) || personKeys(prospect).some(key => seen.has(key))) { stats.skipped++; continue; }
+        attempted.add(prospect.prospect_id);
+        currentProspect = prospect;
+        prospectPublished = false;
+        stats.enrichmentRequests++;
+        emit({ type: "progress", message: `Researching ${prospect.full_name || "matched prospect"}…` });
+        const result = await explorium("/v2/prospects/research/enrich", { prospects: [{ prospect_id: prospect.prospect_id }], parameters: { query: `${instructions} Research this person against ${context}. Return professional context, recent signal, conversation hook and source URLs.`, output_schema: { type: "object", properties: { summary: { type: "string" }, signal: { type: "string" }, hook: { type: "string" }, sources: { type: "array", items: { type: "string" } } }, required: ["summary", "signal", "hook", "sources"] } } });
+        const row = result.data?.[0];
+        if (!row || row._error) { emit({ type: "progress", message: "One prospect could not be enriched; continuing with remaining matches." }); continue; }
+        await generate(`Format and assess this single retrieved prospect against ${context}. No additional research. Evidence: ${JSON.stringify({ ...prospect, research: row })}`);
+      }
+      cursor = found.page?.next_cursor || null;
+      if (!cursor || cursors.has(cursor)) break;
+      cursors.add(cursor);
+    } while (count < 5 && stats.pages < 20);
   } else if (provider === "vibe") {
     await generate(`Discover and enrich up to five professionals matching ${context}. Use sample/preview and read-only tools only. Never export, launch bulk jobs, or change saved lists. If tools cannot supply profiles, fail rather than invent people.`, [{ type: "mcp", server_label: "vibe", server_url: "https://vibeprospecting.explorium.ai/mcp", authorization: process.env.VIBE_ACCESS_TOKEN, allowed_tools: { read_only: true }, require_approval: "never" }]);
   } else {
     await generate(`Find and research up to five real professionals matching ${context}. Use web search. Return fewer if evidence is insufficient. Each profile must include supporting source URLs.`, [{ type: "web_search_preview" }]);
+  }
+  if (provider === "explorium") {
+    emit({ type: "done", count, stats, message: `Explorium returned ${stats.received} records across ${stats.pages} pages; skipped ${stats.skipped} duplicates; added ${count} new profiles.${stats.pages >= 20 && count < 5 ? " Search limit reached; more matches may remain." : ""}` });
+    return;
   }
   emit({ type: "done", count, message: count ? `Completed ${count} profiles.` : "No matching profiles were returned. Refine the target before trying again." });
 }

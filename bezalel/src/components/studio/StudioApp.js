@@ -79,7 +79,7 @@ const actionLabels = {
 
 export default function StudioApp({ document, onOpenBusinessModel, hideSidebar = false, activeView, onViewChange, canvasIdeas = [] }) {
   const router = useRouter();
-  const [internalView, setInternalView] = useState(document ? "inbox" : "home");
+  const [internalView, setInternalView] = useState(document ? "overview" : "home");
   const view = activeView ?? internalView;
   const setView = onViewChange ?? setInternalView;
   const [activeBusinessId, setActiveBusinessId] = useState(document?.id ?? null);
@@ -205,6 +205,7 @@ export default function StudioApp({ document, onOpenBusinessModel, hideSidebar =
           <input aria-label="Search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search Bezalel" style={styles.search} />
         </header>
         {view === "home" && <HomeView businesses={businesses} items={items} openBusiness={openBusiness} />}
+        {view === "overview" && <OverviewView business={activeBusiness} items={items} openBusiness={() => setView("inbox")} openCarousel={() => setView("carousel")} />}
         {view === "inbox" && activeItem && <InboxView items={visibleItems} activeItem={activeItem} chooseItem={chooseItem} filter={filter} setFilter={setFilter} categories={categories} reply={reply} setReply={setReply} replySubmitted={replySubmitted} recording={recording} transcribing={transcribing} audioUrl={audioUrl} startRecording={startRecording} stopRecording={stopRecording} submitReply={submitReply} job={job} runAction={runAction} approve={approve} attachDocument={attachDocument} />}
         {view === "inbox" && !activeItem && <EmptyBusinessInbox business={activeBusiness} />}
         {view === "drafts" && <ArtifactList label="Drafts" artifacts={drafts.filter((artifact) => artifact.documentId === activeBusinessId)} empty="Your approved work-in-progress will appear here." />}
@@ -212,6 +213,7 @@ export default function StudioApp({ document, onOpenBusinessModel, hideSidebar =
         {view === "projects" && <ProjectsView />}
         {view === "automations" && <AutomationsView />}
         {view === "sources" && <OpportunityView key={document?.id ?? "preview"} documentId={document?.id} initialForm={document?.opportunityForm} canvasIdeas={canvasIdeas} />}
+        {view === "carousel" && <CarouselView item={activeItem} onBack={() => setView("inbox")} />}
         {view === "settings" && <SettingsView />}
         {view === "business" && <BusinessBridge router={router} onOpenBusinessModel={onOpenBusinessModel} />}
       </main>
@@ -220,7 +222,32 @@ export default function StudioApp({ document, onOpenBusinessModel, hideSidebar =
 }
 
 function StudioSidebar({ view, setView, activeBusiness, openHome }) {
-  return <aside className="studio-sidebar" style={styles.sidebar}><button onClick={openHome} style={styles.brand}>BEZALEL</button><button onClick={openHome} style={{ ...styles.navItem, ...(view === "home" ? styles.navActive : {}) }}>Home</button><StudioNavigation view={view} setView={setView} documentTitle={activeBusiness?.title} /><div style={styles.sidebarFoot}><span style={styles.dot} />3 new opportunities</div></aside>;
+  return <aside className="studio-sidebar" style={styles.sidebar}><button onClick={openHome} style={styles.brand}>BEZALEL</button><button onClick={() => setView("overview")} style={{ ...styles.navItem, ...(view === "overview" ? styles.navActive : {}) }}>Overview</button><StudioNavigation view={view} setView={setView} documentTitle={activeBusiness?.title} /><div style={styles.sidebarFoot}><span style={styles.dot} />3 new opportunities</div></aside>;
+}
+
+function OverviewView({ business, items, openBusiness, openCarousel }) {
+  const activity = items.filter((item) => !business?.id || item.document?.id === business.id);
+  const unread = activity.filter((item) => item.status === "unread");
+  return <section style={overviewStyles.page}>
+    <div style={overviewStyles.heading}><div><p style={styles.eyebrow}>WORKSPACE OVERVIEW</p><h2 style={overviewStyles.title}>Useful work, in one place.</h2><p style={overviewStyles.lead}>Research, decisions, and drafts stay attached to the document they belong to.</p></div><button onClick={openBusiness} style={styles.primaryButton}>Open inbox →</button></div>
+    <div style={overviewStyles.grid}>
+      <section style={{ ...overviewStyles.card, gridColumn: "span 7" }}><div style={overviewStyles.cardHead}><h3>Documents</h3><span>{business?.title ?? "Active workspace"}</span></div><button onClick={openBusiness} style={overviewStyles.documentRow}><span style={overviewStyles.docDot} /><span><strong>{business?.title ?? "Business workspace"}</strong><small>{business?.goal || "Canvas, research, and content work"}</small></span><span style={overviewStyles.rowArrow}>→</span></button><button onClick={openBusiness} style={overviewStyles.documentRow}><span style={overviewStyles.docDot} /><span><strong>Research inbox</strong><small>{activity.length} attached updates across this workspace</small></span><span style={overviewStyles.rowArrow}>→</span></button></section>
+      <section style={{ ...overviewStyles.card, gridColumn: "span 5" }}><div style={overviewStyles.cardHead}><h3>Needs your attention</h3><span style={overviewStyles.warn}>{unread.length || 0} waiting</span></div>{unread.length ? unread.slice(0, 3).map((item) => <button key={item.id} onClick={openBusiness} style={overviewStyles.activity}><strong>{item.title}</strong><small>{item.category} · {item.createdAt}</small></button>) : <p style={overviewStyles.empty}>Nothing urgent is waiting for you.</p>}</section>
+      <section style={{ ...overviewStyles.card, gridColumn: "span 5" }}><div style={overviewStyles.cardHead}><h3>Automation results</h3><span>Planned</span></div><div style={overviewStyles.automation}><strong>Social listening</strong><small>Grokbot · topics ready to connect</small><b>Every 15 minutes</b></div><div style={overviewStyles.automation}><strong>Contact discovery</strong><small>Explorium · five new contacts</small><b>Every 12 hours</b></div></section>
+      <section style={{ ...overviewStyles.card, gridColumn: "span 7" }}><div style={overviewStyles.cardHead}><h3>Recent activity</h3><span>Attached to this document</span></div>{activity.slice(0, 4).map((item) => <button key={item.id} onClick={openBusiness} style={overviewStyles.activity}><strong>{item.title}</strong><small>{item.summary}</small></button>)}<button onClick={openCarousel} style={{ ...styles.secondaryButton, marginTop: 14 }}>Create a carousel from an insight →</button></section>
+    </div>
+  </section>;
+}
+
+function CarouselView({ item, onBack }) {
+  const slides = [
+    { label: "01", title: item?.title || "Start with the question", copy: item?.summary || "Give the audience a reason to keep reading." },
+    { label: "02", title: "Name the tension", copy: item?.why || "Make the problem clear before offering an answer." },
+    { label: "03", title: "Show the evidence", copy: item?.evidence?.[0]?.excerpt || "Use a specific signal instead of a generic claim." },
+    { label: "04", title: "Offer the angle", copy: item?.suggestedAngle || "Turn the insight into a perspective worth sharing." },
+    { label: "05", title: "Invite a response", copy: "End with a question that gives the audience somewhere to go." },
+  ];
+  return <section style={carouselStyles.page}><button onClick={onBack} style={styles.back}>← Back to inbox</button><div style={carouselStyles.heading}><div><p style={styles.eyebrow}>CONTENT STUDIO · CAROUSEL</p><h2 style={carouselStyles.title}>Review the story before it leaves the workspace.</h2><p style={carouselStyles.lead}>This draft keeps the source insight visible, so you can shape the argument before exporting it.</p></div><button onClick={() => window.print()} style={styles.primaryButton}>Export review</button></div><div style={carouselStyles.rail}>{slides.map((slide) => <article key={slide.label} style={carouselStyles.slide}><span style={carouselStyles.number}>{slide.label}</span><h3>{slide.title}</h3><p>{slide.copy}</p></article>)}</div><div style={carouselStyles.footer}><span>5 slides · Draft · Approval required</span><button onClick={onBack} style={styles.secondaryButton}>Return to source</button></div></section>;
 }
 
 function HomeView({ businesses: allBusinesses, items, openBusiness }) {
@@ -281,7 +308,7 @@ function ProjectsView() { return <section style={styles.module}><p style={styles
 function AutomationsView() { return <section style={styles.module}><p style={styles.eyebrow}>AUTOMATIONS</p><article style={styles.rule}><h3>Christian Video</h3><p><strong>When</strong> I create a video from Christian research</p><p><strong>Use</strong> Armstrong Main · Anime · 60 seconds</p><p><strong>Approval</strong> Always ask</p></article></section>; }
 function SettingsView() { return <section style={styles.module}><p style={styles.eyebrow}>SETTINGS</p><article style={styles.rule}><h3>Armstrong Main</h3><p>Reflective · Conversational · Story-driven</p><p>Anime · 45–60 seconds · 9:16 · Captions on</p><p><strong>Approval:</strong> Always required</p></article></section>; }
 function BusinessBridge({ router, onOpenBusinessModel }) { return <section style={styles.module}><p style={styles.eyebrow}>BUSINESS MODEL</p><h2 style={styles.readTitle}>Your model shapes this document’s research.</h2><p style={{ color: "#666", maxWidth: 580, lineHeight: 1.7 }}>The customer, problem, value proposition, channels, and priorities in this canvas determine what belongs in this validation inbox.</p><button onClick={onOpenBusinessModel ?? (() => router.push("/documents"))} style={{ ...styles.primaryButton, marginTop: 24 }}>Open Business Model</button></section>; }
-function titleFor(view) { return ({ inbox: "Inbox", drafts: "Drafts", published: "Published", projects: "Projects", business: "Business Model", automations: "Automations", sources: "Opportunities", settings: "Settings" })[view] ?? "Inbox"; }
+function titleFor(view) { return ({ overview: "Overview", inbox: "Inbox", drafts: "Drafts", published: "Published", carousel: "Carousel", projects: "Projects", business: "Business Model", automations: "Automations", sources: "Opportunities", settings: "Settings" })[view] ?? "Inbox"; }
 
 const briefActionStyles = {
   panel: { margin: "0 46px 56px", padding: "20px", border: "1px solid #dfe5de", borderRadius: 9, background: "#f8fbf8" },
@@ -301,6 +328,41 @@ const homeStyles = {
   businessCard: { minHeight: 255, padding: 23, border: "1px solid #e0e0da", borderRadius: 9, background: "#fff", color: "#20201f", textAlign: "left", font: "inherit", cursor: "pointer", boxShadow: "0 1px 1px rgba(0,0,0,.02)" },
   businessGoal: { marginTop: 24, paddingTop: 15, borderTop: "1px solid #e9e9e4", display: "grid", gap: 4, color: "#696963", fontSize: 12, lineHeight: 1.45 },
   openBusiness: { display: "block", marginTop: 20, color: "#28704a", fontSize: 12, fontWeight: 700 },
+};
+
+const overviewStyles = {
+  page: { maxWidth: 1080, padding: "42px 42px 70px", margin: "0 auto" },
+  heading: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 20, marginBottom: 28 },
+  title: { margin: "0 0 8px", fontSize: 30, letterSpacing: "-0.04em" },
+  lead: { maxWidth: 570, margin: 0, color: "#686862", fontSize: 14, lineHeight: 1.6 },
+  grid: { display: "grid", gridTemplateColumns: "repeat(12, minmax(0, 1fr))", gap: 14 },
+  card: { minHeight: 150, padding: 20, border: "1px solid #e0e0da", borderRadius: 10, background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,.02)" },
+  cardHead: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 16 },
+  cardHeadTitle: { fontSize: 16 },
+  cardHeadNote: { color: "#888", fontSize: 11 },
+  documentRow: { width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "13px 0", border: 0, borderTop: "1px solid #eeeeea", background: "transparent", textAlign: "left", cursor: "pointer", font: "inherit" },
+  docDot: { width: 9, height: 9, borderRadius: 99, background: "#2f7d52", flexShrink: 0 },
+  documentRowText: { display: "grid", gap: 3, minWidth: 0 },
+  documentRowSmall: { color: "#80807a", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  rowArrow: { marginLeft: "auto", color: "#999", fontSize: 18 },
+  warn: { color: "#8a5a12", background: "#f8efd9", borderRadius: 99, padding: "3px 8px", fontSize: 11 },
+  activity: { width: "100%", display: "grid", gap: 3, padding: "10px 0", border: 0, borderTop: "1px solid #eeeeea", background: "transparent", textAlign: "left", cursor: "pointer", font: "inherit" },
+  activitySmall: { color: "#80807a", fontSize: 12, lineHeight: 1.45 },
+  empty: { color: "#85857e", fontSize: 13 },
+  automation: { display: "grid", gap: 3, padding: "10px 0", borderTop: "1px solid #eeeeea", fontSize: 13 },
+  automationSmall: { color: "#80807a", fontSize: 12 },
+  automationB: { color: "#2f7d52", fontSize: 11, fontWeight: 600 },
+};
+
+const carouselStyles = {
+  page: { maxWidth: 1080, padding: "30px 42px 70px", margin: "0 auto" },
+  heading: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 20, margin: "12px 0 28px" },
+  title: { maxWidth: 680, margin: "0 0 8px", fontSize: 30, letterSpacing: "-0.04em" },
+  lead: { maxWidth: 600, margin: 0, color: "#686862", fontSize: 14, lineHeight: 1.6 },
+  rail: { display: "grid", gridTemplateColumns: "repeat(5, minmax(150px, 1fr))", gap: 12, overflowX: "auto", paddingBottom: 8 },
+  slide: { minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 18, border: "1px solid #dfe5de", borderRadius: 10, background: "linear-gradient(160deg,#f7fbf8,#e5eee9)", boxShadow: "0 5px 14px rgba(28,62,47,.06)" },
+  number: { alignSelf: "flex-start", marginBottom: "auto", color: "#2f6f63", fontFamily: "monospace", fontSize: 12, fontWeight: 700 },
+  footer: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 18, color: "#777", fontSize: 12 },
 };
 
 const styles = { app: { minHeight: "100vh", display: "flex", background: "#fcfcfb", color: "#20201f" }, sidebar: { width: 220, minWidth: 220, borderRight: "1px solid #e7e7e2", background: "#f7f7f4", padding: "26px 12px", display: "flex", flexDirection: "column" }, brand: { background: "none", border: "none", padding: "0 10px 28px", textAlign: "left", fontSize: 14, letterSpacing: "0.1em", fontWeight: 800, cursor: "pointer" }, navGroup: { borderTop: "1px solid #e4e4df", marginTop: 14, paddingTop: 14 }, navItem: { display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", padding: "8px 10px", borderRadius: 6, color: "#656562", font: "inherit", fontSize: 13, cursor: "pointer" }, navActive: { background: "#e9e9e4", color: "#222", fontWeight: 650 }, sidebarFoot: { marginTop: "auto", padding: "10px", color: "#777", fontSize: 12 }, dot: { display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#4d9167", marginRight: 7 }, main: { flex: 1, minWidth: 0 }, topbar: { minHeight: 105, padding: "28px 42px 20px", display: "flex", justifyContent: "space-between", gap: 20, alignItems: "flex-start", borderBottom: "1px solid #e7e7e2", background: "#fff" }, eyebrow: { color: "#8a8a85", fontSize: 10, letterSpacing: "0.1em", fontWeight: 700, marginBottom: 5 }, pageTitle: { fontSize: 28, letterSpacing: "-0.04em" }, search: { width: 210, border: "1px solid #e1e1dc", borderRadius: 6, padding: "9px 11px", font: "inherit", fontSize: 13, outline: "none" }, inboxLayout: { display: "grid", gridTemplateColumns: "minmax(290px, 0.8fr) minmax(420px, 1.7fr)", minHeight: "calc(100vh - 105px)" }, listPane: { borderRight: "1px solid #e7e7e2", background: "#fff" }, filters: { padding: "15px 17px", display: "flex", flexWrap: "wrap", gap: 6, borderBottom: "1px solid #eee" }, filter: { border: "none", background: "transparent", padding: "4px 7px", color: "#777", borderRadius: 4, cursor: "pointer", fontSize: 11 }, filterActive: { background: "#ecece7", color: "#222", fontWeight: 700 }, item: { display: "flex", flexDirection: "column", width: "100%", textAlign: "left", background: "#fff", border: "none", borderBottom: "1px solid #efefeb", padding: "18px 20px", cursor: "pointer", gap: 5, font: "inherit" }, itemActive: { background: "#f5f5f1", boxShadow: "inset 3px 0 0 #454540" }, itemCategory: { color: "#7f7f79", fontSize: 10, letterSpacing: "0.09em", fontWeight: 750 }, itemTitle: { color: "#262624", fontSize: 14, lineHeight: 1.35 }, itemSummary: { color: "#74746e", fontSize: 12, lineHeight: 1.5 }, itemFooter: { color: "#9b9b95", fontSize: 10, marginTop: 3 }, readPane: { background: "#fcfcfb", overflow: "auto" }, readContent: { width: "min(680px, 100%)", padding: "30px 46px 72px", margin: "0 auto" }, back: { border: "none", background: "none", color: "#777", fontSize: 12, padding: "0 0 24px", cursor: "pointer" }, readTitle: { fontSize: 31, letterSpacing: "-0.045em", lineHeight: 1.15, margin: "6px 0 30px" }, documentAttachment: { padding: "15px 16px", margin: "0 0 22px", border: "1px solid #dfdfd8", borderRadius: 7, background: "#f7f7f3", color: "#565650", fontSize: 12, lineHeight: 1.55 }, attachmentLabel: { color: "#83837d", fontSize: 9, letterSpacing: "0.1em", fontWeight: 700, marginBottom: 5 }, documentSelect: { display: "block", width: "100%", marginTop: 10, border: "1px solid #d7d7d0", borderRadius: 5, background: "#fff", padding: "7px 8px", color: "#42423e", font: "inherit", fontSize: 12 }, detailSection: { padding: "20px 0", borderTop: "1px solid #e8e8e4", color: "#595955", fontSize: 14, lineHeight: 1.7 }, sectionHeading: { color: "#81817b", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }, evidence: { borderLeft: "2px solid #d8d8d1", paddingLeft: 13, marginBottom: 14 }, metric: { marginLeft: 8, color: "#2f7d52", fontWeight: 600, fontSize: 11 }, angle: { color: "#333", fontFamily: "Georgia, serif", fontSize: 17, lineHeight: 1.6 }, replyBox: { borderTop: "1px solid #ddd", paddingTop: 22, marginTop: 12 }, replyLabel: { display: "block", fontWeight: 700, fontSize: 13, marginBottom: 8 }, textarea: { width: "100%", minHeight: 120, resize: "vertical", border: "1px solid #dcdcd6", borderRadius: 7, padding: 12, font: "inherit", fontSize: 14, lineHeight: 1.6, outline: "none" }, replyActions: { display: "flex", justifyContent: "flex-end", flexWrap: "wrap", gap: 9, marginTop: 11 }, primaryButton: { border: "none", background: "#272725", color: "#fff", padding: "9px 13px", borderRadius: 6, font: "inherit", fontSize: 12, fontWeight: 700, cursor: "pointer" }, secondaryButton: { border: "1px solid #d8d8d2", background: "#fff", color: "#4d4d49", padding: "9px 12px", borderRadius: 6, font: "inherit", fontSize: 12, cursor: "pointer" }, stopButton: { border: "1px solid #e8b9b9", background: "#fff6f6", color: "#a24242", padding: "9px 12px", borderRadius: 6, font: "inherit", fontSize: 12, cursor: "pointer" }, muted: { color: "#92928c", fontSize: 12, marginTop: 8 }, actionBox: { borderTop: "1px solid #ddd", paddingTop: 22, marginTop: 12 }, actionQuestion: { fontSize: 15, fontWeight: 700, marginBottom: 12 }, actionGrid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }, actionButton: { border: "1px solid #dcdcd6", background: "#fff", borderRadius: 6, padding: "12px 10px", textAlign: "left", font: "inherit", fontWeight: 600, fontSize: 12, cursor: "pointer" }, noteButton: { background: "none", border: "none", color: "#777", padding: "12px 9px 0 0", marginRight: 8, font: "inherit", fontSize: 12, cursor: "pointer" }, job: { borderTop: "1px solid #ddd", paddingTop: 24, marginTop: 12 }, jobTitle: { fontWeight: 700, marginBottom: 12 }, jobStep: { fontSize: 13, margin: "7px 0", color: "#666" }, preview: { marginTop: 22, background: "#fff", border: "1px solid #e0e0da", borderRadius: 8, padding: 18 }, mediaPlaceholder: { minHeight: 180, borderRadius: 5, display: "grid", placeItems: "center", background: "#e9e9e4", color: "#777", fontSize: 11, letterSpacing: "0.1em", marginBottom: 15 }, module: { padding: "42px", maxWidth: 820 }, empty: { padding: "44px 25px", color: "#777", fontSize: 14, lineHeight: 1.7 }, artifact: { display: "flex", gap: 15, alignItems: "center", borderBottom: "1px solid #e6e6e0", padding: "18px 0" }, artifactType: { minWidth: 72, color: "#888", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em" }, project: { padding: "17px 0", borderBottom: "1px solid #e6e6e0" }, rule: { padding: 20, border: "1px solid #e3e3dd", borderRadius: 8, lineHeight: 1.8, color: "#60605b" }, source: { display: "flex", justifyContent: "space-between", padding: "15px 0", borderBottom: "1px solid #e6e6e0", fontSize: 14 } };

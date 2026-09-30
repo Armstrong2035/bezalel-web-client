@@ -1,16 +1,43 @@
-.page { position: relative; display: grid; grid-template-columns: 2fr 1fr; min-height: 100svh; background: #fff; color: #1a1a1a; }
-.back { position: absolute; top: 16px; left: 16px; display: inline-flex; padding: 8px; border-radius: 50%; color: inherit; }
-.back:hover { background: #f5f5f4; }
-.form { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 80px 24px; }
-.heading { font-family: Poppins, system-ui, sans-serif; font-size: clamp(44px, 6vw, 71px); line-height: 1.12; font-weight: 700; margin: 0; }
-.artwork { display: flex; align-items: center; justify-content: center; padding: 24px; }
-.logo { display: block; width: 100%; max-width: 300px; height: auto; }
-.provider { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.googleButton { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 20px; min-height: 48px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a1a; font: inherit; cursor: pointer; }
-.googleButton:hover { background: #f5f5f4; }
+.page { min-height: 100svh; background: #f7f7f0; color: #272e22; font-family: Inter, ui-sans-serif, system-ui, sans-serif; display: flex; flex-direction: column; }
+.page a { color: inherit; text-decoration: none; }
+.page a:focus-visible, .page button:focus-visible { outline: 2px solid #647c36; outline-offset: 5px; }
+.header, .footer { width: min(1280px, calc(100% - 96px)); margin-inline: auto; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.header { min-height: 96px; border-bottom: 1px solid #dde1d2; }
+.brand { display: inline-flex; align-items: center; gap: 9px; font-size: 24px; font-weight: 650; letter-spacing: -1.2px; }
+.mark { display: inline-grid; place-items: center; width: 32px; height: 32px; background: #272e22; border-radius: 9px; color: #dbf494; font-size: 27px; padding-right: 3px; }
+.beta { font: 9px ui-monospace, monospace; letter-spacing: 1px; color: #69715f; border: 1px solid #dde1d2; padding: 3px 5px; margin-left: 4px; border-radius: 4px; }
+.back { display: inline-flex; align-items: center; gap: 9px; font-size: 12px; padding-block: 10px; }
+.back:hover, .switch a:hover { color: #647c36; }
+.main { width: min(1280px, calc(100% - 96px)); margin: 32px auto; display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 650px; }
+.form { display: flex; align-items: center; justify-content: center; padding: 55px 55px 55px 12px; }
+.formInner { width: 100%; max-width: 420px; }
+.main > *, .artworkInner { min-width: 0; }
+.eyebrow { font-size: 9px; font-weight: 650; letter-spacing: 1.6px; display: flex; align-items: center; gap: 8px; color: #64734c; }
+.eyebrow > span { height: 5px; width: 5px; border-radius: 50%; background: #799348; }
+.heading { font-size: clamp(38px, 3.9vw, 55px); line-height: 1.15; font-weight: 500; letter-spacing: -2.5px; margin: 23px 0 20px; }
+.page em { font-family: Georgia, 'Times New Roman', serif; color: #72854f; font-weight: 400; }
+.description { font-size: 14px; line-height: 1.9; color: #69715f; max-width: 365px; margin-bottom: 32px; }
+.provider { display: flex; flex-direction: column; align-items: stretch; gap: 14px; width: 100%; }
+.googleButton { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 16px 20px; min-height: 54px; border: 1px solid #272e22; border-radius: 7px; background: #272e22; color: #f2f8e6; font: inherit; font-size: 14px; font-weight: 550; cursor: pointer; transition: background .2s; }
+.googleButton svg { flex-shrink: 0; }
+.googleButton:hover { background: #435232; }
 .googleButton:disabled { cursor: wait; opacity: .65; }
-.error { color: #b91c1c; font-size: 14px; text-align: center; max-width: 420px; }
-@media (max-width: 899px) {
-  .page { grid-template-columns: 1fr; }
-  .artwork { display: none; }
-}
+.error { background: #fff0ed; border: 1px solid #e8c6bd; border-radius: 6px; padding: 12px; color: #913c29; font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+.helper { font-size: 11px; color: #69715f; text-align: center; margin-top: 13px; }
+.switch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; border-top: 1px solid #dde1d2; margin-top: 34px; padding-top: 22px; font-size: 12px; color: #69715f; }
+.switch a { color: #272e22; font-weight: 550; }
+.artwork { background: radial-gradient(ellipse at 50% 28%, #e8f2cd, #edf1e3 65%); border: 1px solid #dfe5d3; border-radius: 14px; display: flex; align-items: center; justify-content: center; padding: 20px 42px 44px; }
+.artworkInner { width: 100%; max-width: 395px; }
+.artwork .eyebrow { justify-content: center; font-size: 8px; }
+.artwork h2 { font-size: clamp(30px, 3vw, 42px); line-height: 1.22; letter-spacing: -1.5px; font-weight: 500; text-align: center; margin: 17px 0; }
+.artworkDescription { text-align: center; font-size: 13px; line-height: 1.85; color: #69715f; max-width: 310px; margin: 0 auto; }
+.notes { margin-top: 28px; border-top: 1px solid #d6dfc5; }
+.notes > div { display: flex; gap: 17px; padding-top: 17px; }
+.notes > div > span { font: 10px ui-monospace, monospace; color: #72854f; margin-top: 4px; }
+.notes p { display: flex; flex-direction: column; gap: 4px; }
+.notes strong { font-size: 12px; font-weight: 550; }
+.notes small { font-size: 11px; color: #69715f; line-height: 1.6; }
+.footer { min-height: 65px; border-top: 1px solid #dde1d2; font-size: 10px; color: #69715f; }
+@media (max-width: 1000px) { .header, .main, .footer { width: calc(100% - 56px); } .form { padding-right: 32px; padding-left: 0; } .artwork { padding-inline: 24px; } .heading { letter-spacing: -1.5px; } }
+@media (max-width: 760px) { .header, .main, .footer { width: calc(100% - 40px); } .header { min-height: 78px; } .brand { font-size: 21px; } .beta { display: none; } .main { grid-template-columns: 1fr; margin-block: 0 30px; min-height: 0; } .form { padding: 58px 4px 48px; } .formInner { max-width: 440px; } .heading { font-size: clamp(37px, 7vw, 49px); } .description { max-width: 400px; } .artwork { padding: 0 24px 30px; } .artworkInner { max-width: 380px; } .artwork h2 { font-size: 33px; } .footer { flex-wrap: wrap; gap: 7px 20px; padding-block: 18px; } }
+@media (prefers-reduced-motion: reduce) { .googleButton { transition: none; } }

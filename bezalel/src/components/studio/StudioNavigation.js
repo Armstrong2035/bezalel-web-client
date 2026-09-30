@@ -1,7 +1,7 @@
 "use client";
 
 const navGroups = [
-  [{ id: "inbox", label: "Inbox" }, { id: "drafts", label: "Drafts" }, { id: "published", label: "Published" }],
+  [{ id: "inbox", label: "Inbox" }, { id: "drafts", label: "Drafts" }, { id: "published", label: "Published" }, { id: "carousel", label: "Carousel" }],
   [{ id: "projects", label: "Projects" }, { id: "automations", label: "Automations" }, { id: "sources", label: "Opportunities" }],
   [{ id: "settings", label: "Settings" }],
 ];
@@ -13,7 +13,7 @@ export function StudioNavigation({ view, setView, onOpen }) {
   };
 
   return <div style={studioTreeStyles.tree}>
-    <button onClick={() => chooseView("inbox")} style={studioTreeStyles.parent}>
+    <button onClick={() => chooseView("overview")} style={studioTreeStyles.parent}>
       <span style={studioTreeStyles.branch}>⌄</span>
       Validation Studio
     </button>

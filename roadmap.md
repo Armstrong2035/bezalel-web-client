@@ -9,6 +9,13 @@
 - Route notifications to their document and, where possible, the relevant comment, change, or request.
 - Preserve the pane's collapsed state and the document list's filters and scroll position when navigating. Keep the document title, essential actions, and access to notifications available while focused.
 
+### Interface reference now in the product
+
+- Use the document page as the shared shell for overview, inbox, canvas, research, and content work.
+- Open validation work on a bento overview with Documents, Needs your attention, Automation results, and Recent activity cards.
+- Keep the document pane collapsible and remember the user's choice between visits. The collapsed rail retains new-document and all-documents actions.
+- Treat inbox items as attached activity, so an insight, notification, or generated result always points back to its document.
+
 ## Adaptive feedback engine
 
 - Design feedback as a recursive learning loop for improving Bezalel continuously: ask for feedback, store each response, classify it, discover recurring topics, and use those topics to shape subsequent feedback prompts.
@@ -36,3 +43,11 @@
 - Provide controls to create, edit, pause, resume, and delete schedules, plus a run-now action. Show the next run, last run, and run history with success or failure status.
 - Define start times and timezone handling. Prevent overlapping runs and duplicate deliveries, retry transient failures within limits, and respect provider quotas and usage budgets.
 - Validate provider access and supported scheduling frequencies during implementation. These are roadmap requirements; no recurring jobs are activated by this entry.
+
+## Content and carousel generation
+
+- Turn a selected research item, evidence set, or personal perspective into a reviewable carousel draft.
+- Generate a five-slide story structure with a clear opening question, the central tension, evidence, a useful angle, and a closing invitation to respond.
+- Keep source context visible while reviewing slides so the user can preserve their own point of view and correct unsupported claims.
+- Support slide-by-slide editing, visual direction, regeneration of an individual slide, and export for the intended publishing surface.
+- Treat approval as an explicit step. Publishing, media rendering, and durable artifact storage remain implementation work; the current interface provides the review surface and draft flow.

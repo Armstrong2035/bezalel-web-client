@@ -1,25 +1,43 @@
-import Image from "next/image";
 import Link from "@/components/loading/NavigationLink";
 import GoogleAuthProvider from "./GoogleAuthProvider";
-import Mark from "../../../public/images/logos/Mark.png";
+import RollingMascot from "@/components/brand/RollingMascot";
 import styles from "./auth.module.css";
 
 // The shell renders on the server; only the sign-in action needs hydration.
-export default function AuthPage({ heading, cta }) {
+export default function AuthPage({ cta }) {
+  const signingUp = cta === "Sign up";
   return (
-    <main className={styles.page}>
-      <Link href="/" className={styles.back} aria-label="Back to home">
-        <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M20 12H4m7-7-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2" />
-        </svg>
-      </Link>
-      <section className={styles.form} aria-labelledby="auth-heading">
-        <h1 id="auth-heading" className={styles.heading}>{heading}</h1>
-        <GoogleAuthProvider cta={cta} />
-      </section>
-      <aside className={styles.artwork}>
-        <Image src={Mark} alt="Bezalel Logo" width={300} height={300} sizes="300px" className={styles.logo} />
-      </aside>
-    </main>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <Link href="/" className={styles.brand} aria-label="Bezalel home"><span className={styles.mark}>b.</span> bezalel <span className={styles.beta}>BETA</span></Link>
+        <Link href="/" className={styles.back}><span aria-hidden="true">←</span> Back to home</Link>
+      </header>
+      <main className={styles.main}>
+        <section className={styles.form} aria-labelledby="auth-heading">
+          <div className={styles.formInner}>
+            <p className={styles.eyebrow}><span /> YOUR AI BUSINESS COFOUNDER</p>
+            <h1 id="auth-heading" className={styles.heading}>{signingUp ? <>Big ideas.<br /><em>Start here.</em></> : <>Welcome back.<br /><em>Let’s keep building.</em></>}</h1>
+            <p className={styles.description}>{signingUp ? "A little more perspective for the business you want to build. Create your account and start thinking it through with Bezalel." : "Make room for your next good decision. Your canvas, research, and daily digest are waiting."}</p>
+            <GoogleAuthProvider cta={cta} />
+            <p className={styles.helper}>{signingUp ? "Create your account securely with Google." : "Sign in with the Google account you used to join."}</p>
+            <div className={styles.switch}><span>{signingUp ? "Already building with us?" : "New to Bezalel?"}</span><Link href={signingUp ? "/auth/signin" : "/auth/signup"}>{signingUp ? "Sign in" : "Create an account"} <span aria-hidden="true">↗</span></Link></div>
+          </div>
+        </section>
+        <aside className={styles.artwork} aria-labelledby="cofounder-heading">
+          <div className={styles.artworkInner}>
+            <RollingMascot />
+            <p className={styles.eyebrow}>A LITTLE MOTION. A NEW PERSPECTIVE.</p>
+            <h2 id="cofounder-heading">Your ambition.<br /><em>A thoughtful partner.</em></h2>
+            <p className={styles.artworkDescription}>A place to think clearly about your business—and find a next step worth taking.</p>
+            <div className={styles.notes}>
+              <div><span>01</span><p><strong>Give your ideas direction.</strong><small>Build the picture with your business canvas.</small></p></div>
+              <div><span>02</span><p><strong>Make room for evidence.</strong><small>Explore research that challenges or supports your thinking.</small></p></div>
+              <div><span>03</span><p><strong>Decide what matters next.</strong><small>Review your digest and choose where to focus.</small></p></div>
+            </div>
+          </div>
+        </aside>
+      </main>
+      <footer className={styles.footer}><span>Your business cofounder.</span><span>Think it through. Keep building.</span></footer>
+    </div>
   );
 }

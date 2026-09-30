@@ -4,6 +4,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../firebase/auth";
 import { useDocumentStore } from "@/stores/documentStore";
 import { useSegmentsStore } from "@/stores/segmentsStore";
+import { useInboxStore } from "@/stores/inboxStore";
 
 const initialSnapshot = { user: null, loading: true };
 let snapshot = initialSnapshot;
@@ -20,6 +21,7 @@ function subscribe(listener) {
         workspaceUserId = uid;
         useDocumentStore.setState({ documents: [], documentsLoaded: false, activeDocumentId: null, openSectionKey: null });
         useSegmentsStore.setState({ segments: {}, acceptedIdeas: [] });
+        useInboxStore.setState({ messages: [], seededUid: null });
       }
       snapshot = { user, loading: false };
       listeners.forEach(notify => notify());

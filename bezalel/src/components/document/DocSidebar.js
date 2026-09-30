@@ -26,6 +26,15 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
   const [titleDraft, setTitleDraft] = useState(docTitle || "Untitled");
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try { setCollapsed(window.localStorage.getItem("bezalel-document-pane") === "collapsed"); } catch {}
+  }, []);
+  const toggleCollapsed = () => setCollapsed((current) => {
+    const next = !current;
+    try { window.localStorage.setItem("bezalel-document-pane", next ? "collapsed" : "expanded"); } catch {}
+    return next;
+  });
   useEffect(() => { setTitleDraft(docTitle || "Untitled"); }, [docId, docTitle]);
   const updateDocument = useDocumentStore((state) => state.updateDocument);
   const addDocument = useDocumentStore((state) => state.addDocument);
@@ -72,8 +81,8 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
   return (
     <aside
       style={{
-        width: 240,
-        minWidth: 240,
+        width: collapsed ? 64 : 240,
+        minWidth: collapsed ? 64 : 240,
         height: "100vh",
         position: "sticky",
         top: 0,
@@ -85,10 +94,11 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
         overflowY: "auto",
         zIndex: 10,
         flexShrink: 0,
+        transition: "width 180ms ease, min-width 180ms ease",
       }}
     >
       {/* Logo */}
-      <div style={{ padding: "0 16px 16px", borderBottom: "1px solid #e8e8e6" }}>
+      <div style={{ padding: collapsed ? "0 10px 16px" : "0 16px 16px", borderBottom: "1px solid #e8e8e6", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <Link href="/documents" style={{ textDecoration: "none" }}>
           <span
             style={{
@@ -98,10 +108,13 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
               letterSpacing: "-0.3px",
             }}
           >
-            Bezalel
+            {collapsed ? "B" : "Bezalel"}
           </span>
         </Link>
+        <button onClick={toggleCollapsed} aria-label={collapsed ? "Expand document pane" : "Collapse document pane"} title={collapsed ? "Expand pane" : "Collapse pane"} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#777", fontSize: 16, padding: 4 }}>{collapsed ? "→" : "←"}</button>
       </div>
+
+      {collapsed ? <div style={{ padding: "16px 8px", display: "grid", gap: 8 }}><button onClick={handleNewDoc} aria-label="New document" title="New document" style={{ ...collapsedButton, background: "#1a1a1a", color: "white" }}>+</button><button onClick={() => router.push("/documents")} aria-label="All documents" title="All documents" style={collapsedButton}>▦</button></div> : <>
 
       {/* Editable doc title */}
       {error && <p role="alert" style={{ color: "#b91c1c", padding: "0 16px", fontSize: 12 }}>{error}</p>}
@@ -173,9 +186,10 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
           </button>
         )}
       </div>
+      </>}
 
       {/* Context link — sits just below the doc title */}
-      <div style={{ padding: "0 8px 8px", borderBottom: "1px solid #e8e8e6" }}>
+      <div style={{ display: collapsed ? "none" : "block", padding: "0 8px 8px", borderBottom: "1px solid #e8e8e6" }}>
         <button
           onClick={onOpenContext}
           style={{
@@ -287,6 +301,7 @@ export default function DocSidebar({ docId, docTitle, hasContext, onOpenContext,
       <div
         style={{
           borderTop: "1px solid #e8e8e6",
+          display: collapsed ? "none" : "flex",
           padding: "12px 8px 0",
           display: "flex",
           flexDirection: "column",
@@ -409,6 +424,16 @@ const exportOptionStyle = {
   fontSize: 12,
   fontFamily: "inherit",
   textAlign: "left",
+};
+
+const collapsedButton = {
+  width: 40,
+  height: 40,
+  border: "1px solid #deded8",
+  borderRadius: 8,
+  background: "white",
+  cursor: "pointer",
+  fontSize: 18,
 };
 
 function SidebarAction({ icon, label, onClick }) {

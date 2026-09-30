@@ -46,8 +46,12 @@ test('every exported API HTTP handler uses the authentication boundary', () => {
   function visit(dir) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const filename = path.join(dir, entry.name);
-      if (entry.isDirectory()) visit(filename);
-      else if (entry.name === 'route.js') {
+      if (entry.isDirectory()) {
+        // Cron routes are triggered by Vercel Cron and authenticated with a
+        // shared CRON_SECRET, not a user ID token, so they are excluded here.
+        if (entry.name === "cron") continue;
+        visit(filename);
+      } else if (entry.name === 'route.js') {
         const source = fs.readFileSync(filename, 'utf8');
         assert.doesNotMatch(source, /export async function (GET|POST|PATCH|PUT|DELETE)/, filename);
         for (const [, method] of source.matchAll(/export const (GET|POST|PATCH|PUT|DELETE)\s*=/g)) {

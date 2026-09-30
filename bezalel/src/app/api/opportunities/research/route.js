@@ -1,11 +1,13 @@
 import { withAuth } from "@/app/lib/withAuth";
 import { NextResponse } from "next/server";
 import { checkRun, runPipeline } from "@/app/lib/services/opportunityPipeline.mjs";
+import { researchHistory } from "@/app/lib/services/researchHistory";
+import { savePersonToNotion } from "@/app/lib/services/notionService";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-async function handlePOST(request) {
+async function handlePOST(request, context, user) {
   const body = await request.json().catch(() => ({}));
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return NextResponse.json({ error: "A research request object is required." }, { status: 400 });
@@ -27,10 +29,19 @@ async function handlePOST(request) {
   let closed = false;
   const stream = new ReadableStream({
     async start(controller) {
-      const emit = event => { if (!closed) controller.enqueue(encoder.encode(JSON.stringify(event) + "\n")); };
+      const emit = event => {
+        if (!closed) controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+        // Persist each discovered person to Notion without blocking the stream.
+        if (event.type === "person") {
+          savePersonToNotion(event.person).catch(error => {
+            console.error("Notion save failed:", error.message);
+          });
+        }
+      };
       const heartbeat = setInterval(() => emit({ type: "heartbeat" }), 15000);
       try {
-        await runPipeline(body, emit, signal);
+        const history = body.provider === "explorium" ? await researchHistory(user.uid) : {};
+        await runPipeline(body, emit, signal, history);
       } catch (error) {
         if (!closed) emit({ type: "error", message: signal.aborted ? (signal.reason?.name === "TimeoutError" ? "Research timed out. Completed profiles have been retained." : "Research stopped.") : error.message });
       } finally {

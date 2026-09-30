@@ -3,8 +3,8 @@ export function createNavigationController({
   now = Date.now,
   schedule = setTimeout,
   unschedule = clearTimeout,
-  minimumMs = 650,
-  revealMs = 240,
+  minimumMs = 150,
+  revealMs = 160,
   slowMs = 12000,
 } = {}) {
   const idle = { phase: "idle", slow: false, label: "Opening your next page" };
