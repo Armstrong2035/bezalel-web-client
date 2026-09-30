@@ -1,3 +1,4 @@
+import { DEEPSEEK_URL, getDeepSeekModel } from "@/app/lib/services/deepseekConfig.mjs";
 import { withAuth } from "@/app/lib/withAuth";
 import { NextResponse } from "next/server";
 import { buildCanvasReasoning, buildCanvasSummary } from "@/app/lib/engines/canvasEngine/canvasReasoning";
@@ -5,8 +6,6 @@ import { getChatMemory, saveChatMemory, saveChatMessage } from "@/app/lib/servic
 import { readChatEvents } from "@/app/lib/services/readChatEvents.mjs";
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-const DEEPSEEK_MODEL = "deepseek-v4-flash";
-const DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions";
 
 /**
  * Builds the system prompt — embeds canvas summary + full reasoning chain.
@@ -54,7 +53,7 @@ Return JSON only:
   "openQuestions": ["unresolved questions worth carrying forward"]
 }`;
 
-  const response = await fetch(DEEPSEEK_CHAT_URL, {
+  const response = await fetch(DEEPSEEK_URL, {
     method: "POST",
     signal: AbortSignal.timeout(30_000),
     headers: {
@@ -62,7 +61,7 @@ Return JSON only:
       Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
     },
     body: JSON.stringify({
-      model: DEEPSEEK_MODEL,
+      model: getDeepSeekModel(),
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       thinking: { type: "disabled" },
@@ -142,7 +141,7 @@ async function handlePOST(request) {
 
     const abort = new AbortController();
     const signal = AbortSignal.any([request.signal, abort.signal, AbortSignal.timeout(120_000)]);
-    const deepseekRes = await fetch(DEEPSEEK_CHAT_URL, {
+    const deepseekRes = await fetch(DEEPSEEK_URL, {
       method: "POST",
       signal,
       headers: {
@@ -150,7 +149,7 @@ async function handlePOST(request) {
         Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
       },
       body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
+        model: getDeepSeekModel(),
         messages: chatMessages,
         stream: true,
         thinking: { type: "disabled" },
@@ -174,7 +173,7 @@ async function handlePOST(request) {
         const preamble = `__REASONING__:${JSON.stringify({ steps: reasoningSteps, raw: reasoningText })}\n`;
         controller.enqueue(encoder.encode(preamble));
 
-        // ── Stream Gemini response ──────────────────────────────────────
+        // ── Stream DeepSeek response ──────────────────────────────────────
         let completed = false;
         try {
           for await (const event of readChatEvents(deepseekRes.body)) {

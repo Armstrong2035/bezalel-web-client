@@ -1,8 +1,8 @@
+import { DEEPSEEK_URL, getDeepSeekModel } from "@/app/lib/services/deepseekConfig.mjs";
 import { withAuth } from "@/app/lib/withAuth";
 import { NextResponse } from "next/server";
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-const DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions";
 
 async function handlePOST(request) {
   try {
@@ -15,7 +15,7 @@ async function handlePOST(request) {
       return NextResponse.json({ error: "messages and ideas are required" }, { status: 400 });
     }
 
-    const response = await fetch(DEEPSEEK_CHAT_URL, {
+    const response = await fetch(DEEPSEEK_URL, {
       method: "POST",
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(60_000)]),
       headers: {
@@ -23,7 +23,7 @@ async function handlePOST(request) {
         Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "deepseek-v4-flash",
+        model: getDeepSeekModel(),
         messages: [
           {
             role: "system",

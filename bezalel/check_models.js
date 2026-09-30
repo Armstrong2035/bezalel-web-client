@@ -1,40 +1,23 @@
-require('dotenv').config();
-const https = require('https');
+require("dotenv").config({ path: [".env.local", ".env"], quiet: true });
 
-const API_KEY = process.env.GEMINI_API_KEY; // I will pass this env var when running
-if (!API_KEY) {
-  console.error("Please provide GEMINI_API_KEY env var");
-  process.exit(1);
+async function main() {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) throw new Error("DEEPSEEK_API_KEY is not configured.");
+  const response = await fetch("https://api.deepseek.com/models", {
+    headers: { Authorization: `Bearer ${apiKey}` },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!response.ok) throw new Error(`DeepSeek model lookup failed (${response.status}).`);
+  const result = await response.json();
+  if (!Array.isArray(result.data)) throw new Error("DeepSeek returned an invalid model list.");
+  console.log("Available DeepSeek models:");
+  for (const model of result.data) console.log(`- ${model.id}`);
+  // Explicit opt-in: one small paid generation through the production service.
+  if (process.argv.includes("--smoke")) {
+    const { generateCanvasSegment } = await import("./src/app/lib/services/llmService.js");
+    const output = await generateCanvasSegment('Return exactly this JSON object: {"ok":true}');
+    if (output.ok !== true) throw new Error("DeepSeek JSON generation check failed.");
+    console.log("Live JSON generation through llmService: passed.");
+  }
 }
-
-const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`;
-
-https.get(url, (res) => {
-  let data = '';
-
-  res.on('data', (chunk) => {
-    data += chunk;
-  });
-
-  res.on('end', () => {
-    try {
-      const json = JSON.parse(data);
-      if (json.models) {
-        console.log("Available Models:");
-        json.models.forEach(model => {
-            if (model.name.includes("gemini")) {
-                console.log(`- ${model.name}`);
-            }
-        });
-      } else {
-        console.log("Response:", json);
-      }
-    } catch (e) {
-      console.error("Error parsing JSON:", e);
-      console.log("Raw data:", data);
-    }
-  });
-
-}).on('error', (err) => {
-  console.error("Error fetching models:", err.message);
-});
+main().catch(error => { console.error(error.message); process.exitCode = 1; });
